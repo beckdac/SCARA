@@ -33,6 +33,13 @@ spokes = 6;
 screwTabs = 4;
 screwTabHeight = 4;
 armLength = 200;
+// misc
+baseDeckExtension = 50;
+// 8 is distance from shaft center to screw center on x axis
+// 35 is screw center to screw center on y axis
+shaftCenterToMountHoldCenterXAxis = 8;
+mountHoleCenterToMountHoleCenter = 35;
+leadScrewDiameter = 8;
 
 /* Pieces in this model
 ** Shoulder:
@@ -58,13 +65,24 @@ translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
 // shoulder - arm joint 
 color([1, .7, .7]) 
-    translate([0, 0, shoulderBaseHeight + 7]) 
+    translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
 // arm joint pieces
+translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + bearingStep])
+    %bearing6807_2RS();
+// arm stepper
+rotate([0, 180, 0]) 
+    translate([armLength - 8, 0, bearingStep * 2]) 
+        StepMotor28BYJ();
+// forearm pieces
+translate([-armLength, 0, 0])
+    forearmLower(bearing6807_2RS_D - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingSteo, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength);
+/*
 render() 
 color([.1, .7, .1]) 
-    translate([-armLength, 0, shoulderBaseHeight + 7 + (2* bearingStep)])
+    translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + (2* bearingStep)])
         armJointSpacer(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, shaftBossDiameter, mountScrewDiameter);
+*/
 
 //bearingInnerStep(bearing6807_2RS_d - iFitAdjust, 2, 2);
 module bearingInnerStep(bearingID, stepHeight, stepWidth) {
@@ -119,14 +137,7 @@ module armJointSpacer(bearingID, bearingOD, bearingStep, shaftBossDiameter, moun
 // WARNING: has some hard-coded non-parametric values in here!
 module shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter) {
     mountHoleDepth = shoulderBaseHeight;
-    // hardcoded values should be moved out
-    baseDeckExtension = 50;
-    // 8 is distance from shaft center to screw center on x axis
-    // 35 is screw center to screw center on y axis
-    shaftCenterToMountHoldCenterXAxis = 8;
-    mountHoleCenterToMountHoleCenter = 35;
-    leadScrewDiameter = 8;
-    // end
+
     //render(convexivity = 3)
     difference() {
         union () {
@@ -193,8 +204,11 @@ module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHei
 }
 
 module armOuterJointBase(bearingOD, bearingStep, setScrewRadius, screwTabs, screwTabHeight) {
+    mountHoleDepth = bearingStep * 2;
+
     union() {
-           //render(convexivity = 3)
+/*
+        //render(convexivity = 3)
     difference() {
         cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
         cylinder(h = bearingStep * 2, d = bearingOD - 2 * bearingStep);
@@ -209,7 +223,28 @@ module armOuterJointBase(bearingOD, bearingStep, setScrewRadius, screwTabs, scre
                                 cube([setScrewRadius * 2, 4 * setScrewRadius, screwTabHeight], center = false);
                         }
                         cylinder(h = screwTabHeight, r = setScrewRadius);
-                    }       
+                    }    
+*/
+        difference() {
+            union() {
+                translate([0, 0, -(bearingStep * 2)])
+                    cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
+                translate([0, 0, bearingStep * 2])
+                    rotate([0, 180, 0])
+                        bearingOuterStep(bearingOD, bearingStep, bearingStep);
+            }
+            // motor shaft hole
+            translate([0, 0, -(bearingStep * 2)])
+                cylinder(h = shoulderBaseHeight + (bearingStep * 2), d = shaftBossDiameter);
+            // mounting holes
+            translate([0, 0, -(bearingStep * 2)]) {
+                translate([shaftCenterToMountHoldCenterXAxis, mountHoleCenterToMountHoleCenter/2, 0]) 
+                cylinder(h = mountHoleDepth, d = mountScrewDiameter);
+                translate([shaftCenterToMountHoldCenterXAxis, -mountHoleCenterToMountHoleCenter/2, 0]) 
+                cylinder(h = mountHoleDepth, d = mountScrewDiameter);
+            }
+        }
+        
     }
 }
 
@@ -238,6 +273,11 @@ module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, sha
                     }
     }
 }
+
+
+module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength) {
+}
+
 
 
 module copy_mirror(vec=[0,1,0]) { 
