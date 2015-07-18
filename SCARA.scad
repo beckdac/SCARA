@@ -34,7 +34,7 @@ screwTabs = 4;
 screwTabHeight = 4;
 armLength = 100;
 // misc
-baseDeckExtension = 50;
+baseDeckExtension = 60;
 boundingBox = 8;
 boundingBoxHalf = boundingBox / 2;
 // 8 is distance from shaft center to screw center on x axis
@@ -58,8 +58,8 @@ forearmLength = 75;
 */
 
 // shoulder base
-color([.7, .7, 1]) 
-    shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+//color([.7, .7, 1]) 
+    %shoulderBase(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
 // shoulder lower stepper
 rotate([0, 180, 0]) 
     translate([-8, 0, 10]) 
@@ -68,10 +68,10 @@ rotate([0, 180, 0])
 translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
 // shoulder top
-color([.6, .6, .9]) 
+//color([.6, .6, .9]) 
     translate([0, 0, 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)])
     rotate([180, 0, 0])
-        shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+        %shoulderBase(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
 // upper shoulder bearing
 translate([0, 0, shoulderBaseHeight + (3 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
@@ -79,6 +79,10 @@ translate([0, 0, shoulderBaseHeight + (3 * bearing6807_2RS_B) + (7 * bearingStep
 rotate([0, 0, 180]) 
     translate([-8, 0, 10 + 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)]) 
         StepMotor28BYJ();
+// shoulder spacers
+shoulderSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
+// end shoulder
+
 // lower arm including the shoulder - arm joint 
 //render()
 color([1, .7, .7]) 
@@ -94,7 +98,11 @@ color([.9, .7, .7])
 // lower bearing
 translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + bearingStep])
     %bearing6807_2RS();
-// arm stepper
+// arm upper stepper
+translate([-armLength + 8, 0, shoulderBaseHeight + ( 3*bearing6807_2RS_B) + (16 * bearingStep) - (.5 * bearingStep)]) 
+    rotate([0, 0, 180]) 
+        StepMotor28BYJ();
+// arm lower stepper
 rotate([0, 180, 0]) 
     translate([armLength - 8, 0, bearingStep * 2]) 
         StepMotor28BYJ();
@@ -107,12 +115,13 @@ translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bea
 // upper
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
-//translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
     rotate([180, 0, 0])
-    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+        forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
 // forearm upper bearing
 translate([-armLength, 0, shoulderBaseHeight + (2 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
+// forearm spacers
+
 /*
 deprecated
 render() 
@@ -144,6 +153,21 @@ module bearingOuterStep(bearingOD, stepHeight, stepWidth) {
     }
 }
 
+module shoulderSpacers(bearingOD, screwSpacerHeight) {
+    render() union() {
+        // screw holes for joining to arm
+        rotate([0, 0, -30])
+        radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+            translate([bearingOD / 2 + (setScrewRadius * 6), 0, shoulderBaseHeight * 1.0])
+        difference() {
+            union () {
+                cylinder(h = screwSpacerHeight, r = setScrewRadius * 2);
+                
+                }
+            cylinder(h = screwTabHeight, r = setScrewRadius);
+        }       
+    }
+}
 
 // armJointSpacer(bearing6807_2RS_D - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, shaftBossDiameter, mountScrewDiameter);
 module armJointSpacer(bearingID, bearingOD, bearingStep, shaftBossDiameter, mountScrewDiameter) {
@@ -171,7 +195,7 @@ module armJointSpacer(bearingID, bearingOD, bearingStep, shaftBossDiameter, moun
 
 //shoulderBase(2, 55, 9.1, 3.1);
 // WARNING: has some hard-coded non-parametric values in here!
-module shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter) {
+module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter) {
     mountHoleDepth = shoulderBaseHeight;
 
     //render(convexivity = 3)
@@ -195,6 +219,12 @@ module shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter,
         // lead screw hole
         translate([baseDeckExtension - (leadScrewDiameter * 1.5), 0, 0])
             cylinder(h = shoulderBaseHeight, d = leadScrewDiameter + (leadScrewDiameter / 2));
+        // upper to lower spacer screw holes
+        rotate([0, 0, -30])
+            radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+                translate([bearingOD / 2 + (setScrewRadius * 6), 0, shoulderBaseHeight * 0])
+                    cylinder(h = screwTabHeight, r = setScrewRadius);
+           
     }
     // NOTE: need to add LM8UU mounts
 }
@@ -379,5 +409,14 @@ module radial_array(vec = [0,0,1], n = 4) {
     {
         rotate( i * 360 / n, vec)
             children();
+    }   
+}
+
+module radial_array_partial(vec = [0,0,1], n = 4, j = 2) {
+    for ( i = [0 : n - 1] )
+    {
+        if (i < j)
+            rotate( i * 360 / n, vec)
+                children();
     }   
 }
