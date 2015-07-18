@@ -315,7 +315,8 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
             cylinder(h = bearingStep * 2, d = bearingOD);
             translate([-forearmLength, 0, 0])
                 cylinder(h = bearingStep * 2, d = bearingOD / 2);
-            translate([-forearmLength + (bearingOD / 2) /* + (boundingBox / 2)*/, -(armWidth / 2) + boundingBoxHalf, 0])
+                 // 4 on next line comes from dividing the bearingOD on the above line
+            translate([-forearmLength + (bearingOD / 4) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
                 #cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
         }
 
