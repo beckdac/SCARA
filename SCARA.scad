@@ -40,6 +40,8 @@ baseDeckExtension = 50;
 shaftCenterToMountHoldCenterXAxis = 8;
 mountHoleCenterToMountHoleCenter = 35;
 leadScrewDiameter = 8;
+// forearm
+forearmLength = 120;
 
 /* Pieces in this model
 ** Shoulder:
@@ -64,6 +66,7 @@ rotate([0, 180, 0])
 translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
 // shoulder - arm joint 
+render()
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
@@ -75,11 +78,13 @@ rotate([0, 180, 0])
     translate([armLength - 8, 0, bearingStep * 2]) 
         StepMotor28BYJ();
 // forearm pieces
-translate([-armLength, 0, 0])
-    forearmLower(bearing6807_2RS_D - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingSteo, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength);
+//render()
+color([.1, .7, .1])
+translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
+//translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
+    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength);
 /*
 render() 
-color([.1, .7, .1]) 
     translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + (2* bearingStep)])
         armJointSpacer(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, shaftBossDiameter, mountScrewDiameter);
 */
@@ -207,24 +212,6 @@ module armOuterJointBase(bearingOD, bearingStep, setScrewRadius, screwTabs, scre
     mountHoleDepth = bearingStep * 2;
 
     union() {
-/*
-        //render(convexivity = 3)
-    difference() {
-        cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
-        cylinder(h = bearingStep * 2, d = bearingOD - 2 * bearingStep);
-    }
-         // screw holes for joining to joint
-        radial_array(vec = [0, 0, 1], n = screwTabs)
-                translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * bearingStep) - screwTabHeight])
-                    difference() {
-                        union () {
-                            cylinder(h = screwTabHeight, r = setScrewRadius * 2);
-                            translate([-2 * setScrewRadius, - 2 * setScrewRadius, 0])
-                                cube([setScrewRadius * 2, 4 * setScrewRadius, screwTabHeight], center = false);
-                        }
-                        cylinder(h = screwTabHeight, r = setScrewRadius);
-                    }    
-*/
         difference() {
             union() {
                 translate([0, 0, -(bearingStep * 2)])
@@ -276,8 +263,33 @@ module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, sha
 
 
 module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength) {
+    rotate([180, 0, 0]) union() {
+        difference() {
+            cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
+            cylinder(h = bearingStep * 2, d = bearingID - (2 * bearingStep));
+        }
+        translate([0, 0, bearingStep * 2])
+            bearingInnerStep(bearingID, bearingStep, bearingStep);
+        // screw holes for joining to arm
+        radial_array(vec = [0, 0, 1], n = screwTabs)
+                translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * bearingStep) - screwTabHeight])
+                    difference() {
+                        union () {
+                            cylinder(h = screwTabHeight, r = setScrewRadius * 2);
+                            translate([-2 * setScrewRadius, - 2 * setScrewRadius, 0])
+                                cube([setScrewRadius * 2, 4 * setScrewRadius, screwTabHeight], center = false);
+                        }
+                        cylinder(h = screwTabHeight, r = setScrewRadius);
+                    }
+        // hub
+        translate([0, 0, hubHeight]) rotate([180, 0, 0]) 
+            stepperHub(hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight);
+        // spokes
+        radial_array(vec=[0, 0, 1], n = spokes)
+                translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), 0]) 
+                    cube([(bearingOD / 2) - hubRadius, spokeWidth, 2 *stepHeight], center = false);       
+    }
 }
-
 
 
 module copy_mirror(vec=[0,1,0]) { 
