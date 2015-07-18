@@ -35,13 +35,15 @@ screwTabHeight = 4;
 armLength = 200;
 // misc
 baseDeckExtension = 50;
+boundingBox = 8;
+boundingBoxHalf = boundingBox / 2;
 // 8 is distance from shaft center to screw center on x axis
 // 35 is screw center to screw center on y axis
 shaftCenterToMountHoldCenterXAxis = 8;
 mountHoleCenterToMountHoleCenter = 35;
 leadScrewDiameter = 8;
 // forearm
-forearmLength = 120;
+forearmLength = 160;
 
 /* Pieces in this model
 ** Shoulder:
@@ -65,8 +67,8 @@ rotate([0, 180, 0])
 // lower shoulder bearing
 translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
-// shoulder - arm joint 
-render()
+// lower arm including the shoulder - arm joint 
+//render()
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
@@ -78,11 +80,11 @@ rotate([0, 180, 0])
     translate([armLength - 8, 0, bearingStep * 2]) 
         StepMotor28BYJ();
 // forearm pieces
-//render()
 color([.1, .7, .1])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
 //translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
-    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength);
+render()
+    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
 /*
 render() 
     translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + (2* bearingStep)])
@@ -172,11 +174,6 @@ module shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter,
 
 
 module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength) {
-    boundingBox = 8;
-    boundingBoxHalf = boundingBox / 2;
-    // original
-    // armWidth = bearingOD + bearingStep;
-    // testing
     armWidth = bearingOD / 2;
     //render(convexivity = 3)
     difference() { 
@@ -282,8 +279,11 @@ module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, sha
 }
 
 
-module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength) {
+module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox) {
+    armWidth = bearingOD / 2;
+
     rotate([180, 0, 0]) union() {
+        boundingBoxHalf = boundingBox / 2;
         difference() {
             cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
             cylinder(h = bearingStep * 2, d = bearingID - (2 * bearingStep));
@@ -307,7 +307,33 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
         // spokes
         radial_array(vec=[0, 0, 1], n = spokes)
                 translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), 0]) 
-                    cube([(bearingOD / 2) - hubRadius, spokeWidth, 2 *stepHeight], center = false);       
+                    cube([(bearingOD / 2) - hubRadius, spokeWidth, 2 *stepHeight], center = false);   
+        // forearm extension
+             difference() {
+            translate([-forearmLength, -armWidth / 2, 0])
+                cube([forearmLength, armWidth, bearingStep * 2], center=false);
+            cylinder(h = bearingStep * 2, d = bearingOD);
+            translate([-forearmLength, 0, 0])
+                cylinder(h = bearingStep * 2, d = bearingOD / 2);
+            translate([-forearmLength + (bearingOD / 2) /* + (boundingBox / 2)*/, -(armWidth / 2) + boundingBoxHalf, 0])
+                #cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
+        }
+
+            intersection() {
+            
+                translate([-forearmLength + boundingBox * 2, -(armWidth / 2) + boundingBoxHalf, 0])
+                    cube([forearmLength - (bearingOD / 2) - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
+                for (i = [ bearingOD / 2 - boundingBoxHalf: armWidth : forearmLength]) {
+                    translate([ -i, 0, bearingStep])
+                        rotate([0, 0, 45])
+                            cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
+                    translate([ -i, 0, bearingStep])
+                        rotate([0, 0, -45])
+                            cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
+                }
+            }
+        
+       
     }
 }
 
