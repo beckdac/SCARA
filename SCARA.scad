@@ -60,7 +60,7 @@ forearmLength = 75;
 // shoulder base
 color([.7, .7, 1]) 
     shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
-// shoulder stepper
+// shoulder lower stepper
 rotate([0, 180, 0]) 
     translate([-8, 0, 10]) 
         StepMotor28BYJ();
@@ -75,6 +75,10 @@ color([.6, .6, .9])
 // upper shoulder bearing
 translate([0, 0, shoulderBaseHeight + (3 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
+// shoulder upper stepper
+rotate([0, 0, 180]) 
+    translate([-8, 0, 10 + 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)]) 
+        StepMotor28BYJ();
 // lower arm including the shoulder - arm joint 
 //render()
 color([1, .7, .7]) 
