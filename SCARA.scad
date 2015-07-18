@@ -67,8 +67,16 @@ rotate([0, 180, 0])
 // lower shoulder bearing
 translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
+// shoulder top
+color([.6, .6, .9]) 
+    translate([0, 0, 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)])
+    rotate([180, 0, 0])
+        shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+// upper shoulder bearing
+translate([0, 0, shoulderBaseHeight + (3 * bearing6807_2RS_B) + (7 * bearingStep)])
+    %bearing6807_2RS();
 // lower arm including the shoulder - arm joint 
-render()
+//render()
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
