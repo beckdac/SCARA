@@ -172,11 +172,14 @@ module shoulderBase(shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter,
 
 
 module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength) {
-    boundingBox = 12;
+    boundingBox = 8;
     boundingBoxHalf = boundingBox / 2;
-    //
-    armWidth = bearingOD + bearingStep;
+    // original
+    // armWidth = bearingOD + bearingStep;
+    // testing
+    armWidth = bearingOD / 2;
     //render(convexivity = 3)
+    difference() { 
     union() {
         armInnerJoint(bearingOD, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight);
         translate([-armLength, 0, 0])
@@ -188,23 +191,29 @@ module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHei
             translate([-armLength, 0, 0])
                 cylinder(h = bearingStep * 2, d = bearingOD);
             translate([-armLength + (bearingOD / 2) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
-                cube([armLength - bearingOD - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
+                cube([armLength - bearingOD - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
         }
         difference() {
             intersection() {
             
-            translate([-armLength + (bearingOD / 2) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
-                cube([armLength - bearingOD - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
-            for (i = [ bearingOD / 2 : armWidth / 2 : armLength]) {
-                translate([ -i, 0, bearingStep])
-                    rotate([0, 0, 45])
-                        cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
-                translate([ -i, 0, bearingStep])
-                    rotate([0, 0, -45])
-                        cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
+                translate([-armLength + (bearingOD / 2) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
+                    cube([armLength - bearingOD - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
+                for (i = [ bearingOD / 2 - boundingBoxHalf: armWidth : armLength]) {
+                    translate([ -i, 0, bearingStep])
+                        rotate([0, 0, 45])
+                            cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
+                    translate([ -i, 0, bearingStep])
+                        rotate([0, 0, -45])
+                            cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
+                }
             }
+        
         }
-    }
+   }
+           // screw holes for joining to upper
+        radial_array(vec = [0, 0, 1], n = screwTabs)
+                translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * stepHeight) - screwTabHeight])
+                       cylinder(h = screwTabHeight, r = setScrewRadius);
    }
 }
 
@@ -238,7 +247,14 @@ module armOuterJointBase(bearingOD, bearingStep, setScrewRadius, screwTabs, scre
 //armInnerJoint(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight);
 module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight) {
     //translate([0, 0, hubHeight - (2 * stepHeight)])
-    union() {
+    difference() {
+        union() {
+         difference() {
+            cylinder(h = bearingStep * 2, d = bearingOD + (setScrewRadius * 6));
+            cylinder(h = bearingStep * 2, d = bearingOD);
+//            translate([0, -bearingOD, 0])
+//                cube([bearingOD, bearingOD * 2, bearingStep * 2]);
+        }
         bearingOuterStep(bearingOD, stepHeight, stepWidth);
         // hub
         translate([0, 0, -(hubHeight - (2 * stepHeight))])
@@ -247,17 +263,21 @@ module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, sha
         radial_array(vec=[0, 0, 1], n = spokes)
                 translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), stepHeight]) 
                     cube([(bearingOD / 2) - hubRadius, spokeWidth, stepHeight], center = false);
-        // screw holes for joining to upper
+        // screw tabs for joining to upper
         radial_array(vec = [0, 0, 1], n = screwTabs)
                 translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * stepHeight) - screwTabHeight])
-                    difference() {
+                    
                         union () {
                             cylinder(h = screwTabHeight, r = setScrewRadius * 2);
                             translate([-2 * setScrewRadius, - 2 * setScrewRadius, 0])
                                 cube([setScrewRadius * 2, 4 * setScrewRadius, screwTabHeight], center = false);
                         }
-                        cylinder(h = screwTabHeight, r = setScrewRadius);
+                        
                     }
+        // screw holes for joining to upper
+        radial_array(vec = [0, 0, 1], n = screwTabs)
+                translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * stepHeight) - screwTabHeight])
+                       cylinder(h = screwTabHeight, r = setScrewRadius);
     }
 }
 
