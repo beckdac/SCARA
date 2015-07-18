@@ -13,7 +13,7 @@ $fn = 24;
 //shoulderBase(2, 55, 9.1, 3.1);
 
 // interference fit adjustment for 3D printer
-iFitAdjust = .6;
+iFitAdjust = .4;
 
 // shoulder base parameters
 shoulderBaseHeight = 3;
@@ -32,7 +32,7 @@ spokeWidth = 3;
 spokes = 6;
 screwTabs = 4;
 screwTabHeight = 4;
-armLength = 200;
+armLength = 100;
 // misc
 baseDeckExtension = 50;
 boundingBox = 8;
@@ -43,7 +43,7 @@ shaftCenterToMountHoldCenterXAxis = 8;
 mountHoleCenterToMountHoleCenter = 35;
 leadScrewDiameter = 8;
 // forearm
-forearmLength = 160;
+forearmLength = 75;
 
 /* Pieces in this model
 ** Shoulder:
@@ -68,11 +68,18 @@ rotate([0, 180, 0])
 translate([0, 0, shoulderBaseHeight + bearingStep])
     %bearing6807_2RS();
 // lower arm including the shoulder - arm joint 
-//render()
+render()
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
-// arm joint pieces
+// upper arm
+//render()
+color([.9, .7, .7]) 
+    translate([0, 0, shoulderBaseHeight + ( 2*bearing6807_2RS_B) + (12 * bearingStep) - (.5 * bearingStep)]) 
+        rotate([180, 0, 0])
+            armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
+// elbow joint pieces
+// lower bearing
 translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + bearingStep])
     %bearing6807_2RS();
 // arm stepper
@@ -80,12 +87,22 @@ rotate([0, 180, 0])
     translate([armLength - 8, 0, bearingStep * 2]) 
         StepMotor28BYJ();
 // forearm pieces
+// lower
 color([.1, .7, .1])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
 //translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
-render()
     forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+// upper
+color([.2, .8, .2])
+translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
+//translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
+    rotate([180, 0, 0])
+    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+// forearm upper bearing
+translate([-armLength, 0, shoulderBaseHeight + (2 * bearing6807_2RS_B) + (7 * bearingStep)])
+    %bearing6807_2RS();
 /*
+deprecated
 render() 
     translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + (2* bearingStep)])
         armJointSpacer(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, shaftBossDiameter, mountScrewDiameter);
@@ -317,7 +334,7 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
                 cylinder(h = bearingStep * 2, d = bearingOD / 2);
                  // 4 on next line comes from dividing the bearingOD on the above line
             translate([-forearmLength + (bearingOD / 4) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
-                #cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
+                cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
         }
 
             intersection() {
