@@ -17,6 +17,7 @@ echo($fn);
 
 // interference fit adjustment for 3D printer
 iFitAdjust = .4;
+iFitAdjust_d = .25;
 
 // shoulder base parameters
 shoulderBaseHeight = 3;
@@ -64,7 +65,7 @@ forearmLength = 75;
 // shoulder base
 module shoulderBasePlate() { // make me 
 color([.7, .7, 1]) 
-    shoulderBase(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+    shoulderBase(bearing6807_2RS_d - iFitAdjust_d, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
 }
 shoulderBasePlate();
 // shoulder lower stepper
@@ -78,7 +79,7 @@ translate([0, 0, shoulderBaseHeight + bearingStep])
 color([.6, .6, .9]) 
     translate([0, 0, 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)])
     rotate([180, 0, 0])
-        shoulderBase(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+        shoulderBase(bearing6807_2RS_d - iFitAdjust_d, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
 // upper shoulder bearing
 translate([0, 0, shoulderBaseHeight + (3 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
@@ -137,7 +138,7 @@ module forearmSection() { // make me
 color([.1, .7, .1])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
 //translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
-    forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+    forearmLower(bearing6807_2RS_d - iFitAdjust_d, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
 }
 forearmSection();
 // upper
@@ -145,7 +146,7 @@ forearmSection();
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
     rotate([180, 0, 0])
-        forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+        forearmLower(bearing6807_2RS_d - iFitAdjust_d, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
 // forearm upper bearing
 translate([-armLength, 0, shoulderBaseHeight + (2 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
@@ -180,15 +181,14 @@ module shoulderSpacers(bearingOD, screwSpacerHeight) {
     union() {
         // screw holes for joining to arm
         rotate([0, 0, -30])
-        radial_array_partial(vec = [0, 0, 1], n = 6, 2)
-            translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight * 1.0])
-        difference() {
-            union () {
-                cylinder(h = screwSpacerHeight, r = setScrewRadius * 2);
-                
-                }
-            cylinder(h = screwTabHeight, r = setScrewRadius);
-        }       
+            radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+                translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight * 1.0])
+                    difference() {
+                        cylinder(h = screwSpacerHeight, r = setScrewRadius * 2);
+                        cylinder(h = screwSpacerHeight / 4, r = setScrewRadius);
+                        translate([0, 0, screwSpacerHeight * .75])
+                            cylinder(h = screwSpacerHeight/4, r = setScrewRadius);
+                    }       
     }
 }
 
