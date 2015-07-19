@@ -1,8 +1,7 @@
 # match "module foobar() { // `make` me"
-TARGETS=$(shell sed '/^module [A-Za-z0-9_-]*().*make..\?me.*$$/!d;s/module //;s/().*/.stl/' SCARA.scad)
+TARGETS=$(shell awk '/^module [A-Za-z0-9_-]*().*make/ { sub(/\(\)/, "", $$2); print $$2 ".stl" }' SCARA.scad)
 
 all: ${TARGETS}
-	echo ${TARGETS}
 
 # auto-generated .scad files with .deps make make re-build always. keeping the
 # scad files solves this problem. (explanations are welcome.)
@@ -12,7 +11,7 @@ all: ${TARGETS}
 include $(wildcard *.deps)
 
 %.scad:
-	echo -n 'use <SCARA.scad>\n$*();' > $@
+	printf 'use <SCARA.scad>\n$*();' > $@
 
 %.stl: %.scad
-	openscad -m make -o $@ -d $@.deps -D 'quality="production"' $<
+	/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD -m make -o $@ -d $@.deps -D 'quality="production"' $<
