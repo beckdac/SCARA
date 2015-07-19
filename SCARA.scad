@@ -98,12 +98,12 @@ shoulderSpacerSet();
 // end shoulder
 
 // lower arm including the shoulder - arm joint 
-//render()
 module armSection() { // make me
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
 }
+//render()
 armSection();
 // upper arm
 //render()
@@ -414,8 +414,8 @@ module armInnerJoint(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, sha
             stepperHub(hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight);
         // spokes
         radial_array(vec=[0, 0, 1], n = spokes)
-                translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), stepHeight]) 
-                    cube([(bearingOD / 2) - hubRadius, spokeWidth, stepHeight], center = false);
+                translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), stepHeight * 1.2]) 
+                    cube([(bearingOD / 2) - hubRadius, spokeWidth, stepHeight * .8], center = false);
         // screw tabs for joining to upper
         radial_array(vec = [0, 0, 1], n = screwTabs)
                 translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * stepHeight) - screwTabHeight])
