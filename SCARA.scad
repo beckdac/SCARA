@@ -3,9 +3,9 @@ use <Hub_28BYJ-48.scad>;
 include <Bearing_6807-2RS.scad>;
 
 // global rendering parameters
-//$fn = 64; // production
+$fn = 64; // production
 //$fn = 48; // development
-$fn = 24; // LQ
+//$fn = 24; // LQ
 echo($fn);
 
 // library examples
@@ -141,7 +141,7 @@ translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bea
 }
 forearmSection();
 // upper
-render()
+//render()
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
     rotate([180, 0, 0])
@@ -474,7 +474,7 @@ sharpieDiameter = 13;
             translate([-forearmLength, 0, 0])
                  cylinder(h = bearingStep * 2, d = sharpieDiameter);
                  // 4 on next line comes from dividing the bearingOD on the above line
-            #translate([-forearmLength + sharpieDiameter, -(armWidth / 2) + boundingBoxHalf, 0])
+            translate([-forearmLength + sharpieDiameter, -(armWidth / 2) + boundingBoxHalf, 0])
                 cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
 /**/
         }
