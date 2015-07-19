@@ -82,6 +82,9 @@ rotate([0, 0, 180])
 // shoulder spacers
 color([.7, .6, .2])
 shoulderSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
+color([.7, .6, .2])
+translate([baseDeckExtension / 3, 0, 0])
+shoulderSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
 // end shoulder
 
 // lower arm including the shoulder - arm joint 
@@ -186,7 +189,8 @@ module armSpacers(bearingOD, screwSpacerHeight) {
                 
                 }
             cylinder(h = bearing6807_2RS_B * 2 + 4 * bearingStep, r = setScrewRadius);
-        }       
+        }
+        // TODO: put in spacers along arm, make sure holes exist in arm
     }
 }
 
@@ -219,7 +223,7 @@ module armJointSpacer(bearingID, bearingOD, bearingStep, shaftBossDiameter, moun
 module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter) {
     mountHoleDepth = shoulderBaseHeight;
 
-    //render(convexivity = 3)
+    render(convexivity = 3)
     difference() {
         union () {
             cylinder(h = shoulderBaseHeight, d = shoulderBaseDiameter);
@@ -243,9 +247,13 @@ module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiamet
         // upper to lower spacer screw holes
         rotate([0, 0, -30])
             radial_array_partial(vec = [0, 0, 1], n = 6, 2)
-                translate([bearingOD / 2 + (setScrewRadius * 6), 0, shoulderBaseHeight * 0])
+                translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight * 0])
                     cylinder(h = screwTabHeight, r = setScrewRadius);
-           
+           translate([baseDeckExtension / 3, 0, 0])
+            rotate([0, 0, -30])
+            radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+                translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight * 0])
+                    cylinder(h = screwTabHeight, r = setScrewRadius);
     }
     // NOTE: need to add LM8UU mounts
 }
