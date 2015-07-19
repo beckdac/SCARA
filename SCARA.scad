@@ -130,13 +130,7 @@ translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bea
 translate([-armLength, 0, shoulderBaseHeight + (2 * bearing6807_2RS_B) + (7 * bearingStep)])
     %bearing6807_2RS();
 // forearm spacers
-
-/*
-deprecated
-render() 
-    translate([-armLength, 0, shoulderBaseHeight + bearing6807_2RS_B + (2* bearingStep)])
-        armJointSpacer(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, shaftBossDiameter, mountScrewDiameter);
-*/
+// none at this time
 
 //bearingInnerStep(bearing6807_2RS_d - iFitAdjust, 2, 2);
 module bearingInnerStep(bearingID, stepHeight, stepWidth) {
@@ -193,7 +187,7 @@ module armSpacers(bearingOD, screwSpacerHeight) {
         // TODO: put in spacers along arm, make sure holes exist in arm
         translate([- armLength, 0, 0])
         rotate([0, 0, -30])
-        radial_array_partial(vec = [0, 0, 1], n = 4, 2)
+        radial_array_partial(vec = [0, 0, 1], n = 6, 2)
             translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight + bearing6807_2RS_B + 2 * bearingStep])
         difference() {
             union () {
@@ -305,11 +299,37 @@ module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHei
             }
         
         }
+               difference() {
+               hull() {
+                   translate([- armLength, 0, bearingStep])
+                    linear_extrude(height = 2 * bearingStep, center = true, twist = 0)
+                        polygon(points=[[0, -bearingOD/2 - setScrewRadius/2], [bearingOD / 2 + (setScrewRadius * 8), -armWidth / 2], [bearingOD / 2 + (setScrewRadius * 8), armWidth / 2], [0, bearingOD/2 + setScrewRadius/2]]);
+                translate([- armLength, 0, 0])
+                    rotate([0, 0, -30])
+                    radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+                        translate([bearingOD / 2 + (setScrewRadius * 8), 0, 0])
+                            cylinder(h = 2 * bearingStep, r = setScrewRadius * 2);
+                        
+                    }
+                translate([- armLength, 0, 0])
+                    rotate([0, 0, -30])
+                    radial_array_partial(vec = [0, 0, 1], n = 6, 2)
+                        translate([bearingOD / 2 + (setScrewRadius * 8), 0, 0])
+                        cylinder(h = 2 * bearingStep, r = setScrewRadius);
+                   
+                 translate([-armLength + (bearingOD / 2) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
+                    cube([armLength - bearingOD - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
+             translate([-armLength, 0, 0])
+                cylinder(h = bearingStep * 2, d = bearingOD);
+               
+        }
    }
            // screw holes for joining to upper
         radial_array(vec = [0, 0, 1], n = screwTabs)
                 translate([bearingOD / 2 + (setScrewRadius * 2), 0, (2 * stepHeight) - screwTabHeight])
                        cylinder(h = screwTabHeight, r = setScrewRadius);
+   
+ 
    }
 }
 
@@ -433,7 +453,7 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
                 }
             }
         
-       
+
     }
 }
 
