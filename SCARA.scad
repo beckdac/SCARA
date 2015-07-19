@@ -3,12 +3,10 @@ use <Hub_28BYJ-48.scad>;
 include <Bearing_6807-2RS.scad>;
 
 // global rendering parameters
-quality = "development";
-if (quality == "production") {
-	$fn = 48;
-} else {
-	$fn = 24;
-}
+//$fn = 64; // production
+//$fn = 48; // development
+$fn = 24; // LQ
+echo($fn);
 
 // library examples
 // translate([100, 100, 10]) { StepMotor28BYJ(); }
@@ -143,6 +141,7 @@ translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bea
 }
 forearmSection();
 // upper
+render()
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
     rotate([180, 0, 0])
@@ -357,14 +356,31 @@ module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHei
 module armOuterJointBase(bearingOD, bearingStep, setScrewRadius, screwTabs, screwTabHeight) {
     mountHoleDepth = bearingStep * 2;
 
+    //render() 
     union() {
         difference() {
             union() {
-                translate([0, 0, -(bearingStep * 2)])
-                    cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
+                translate([0, 0, -(bearingStep * 2)]) 
+                    difference() { // base w/ cutout for seeing into the joint
+                    
+                        cylinder(h = bearingStep * 2, d = bearingOD + bearingStep);
+                    intersection() { // cutout
+                        difference() {
+                            cylinder(h = bearingStep * 2, d = .85 * bearingOD);
+                            cylinder(h = bearingStep * 2, d = .35 * bearingOD);
+                        }
+                        translate([-bearingOD, -bearingOD/2, 0])
+                            cube([bearingOD, bearingOD, bearingStep * 2], center = false);
+                    }
+                }
                 translate([0, 0, bearingStep * 2])
                     rotate([0, 180, 0])
                         bearingOuterStep(bearingOD, bearingStep, bearingStep);
+                // spokes
+                rotate([0, 0, 150])
+                radial_array_partial(vec=[0, 0, 1], n = 6, 2)
+                translate([hubRadius - (bearingStep / 2), -(spokeWidth / 2), -(bearingStep * 2)]) 
+                    cube([(bearingOD / 2) - hubRadius, spokeWidth, bearingStep], center = false);
             }
             // motor shaft hole
             translate([0, 0, -(bearingStep * 2)])
@@ -449,20 +465,23 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
                 translate([hubRadius - (stepWidth / 2), -(spokeWidth / 2), 0]) 
                     cube([(bearingOD / 2) - hubRadius, spokeWidth, 2 *stepHeight], center = false);   
         // forearm extension
-             difference() {
+        difference() {
             translate([-forearmLength, -armWidth / 2, 0])
                 cube([forearmLength, armWidth, bearingStep * 2], center=false);
             cylinder(h = bearingStep * 2, d = bearingOD);
+ /* original */
+sharpieDiameter = 13;
             translate([-forearmLength, 0, 0])
-                cylinder(h = bearingStep * 2, d = bearingOD / 2);
+                 cylinder(h = bearingStep * 2, d = sharpieDiameter);
                  // 4 on next line comes from dividing the bearingOD on the above line
-            translate([-forearmLength + (bearingOD / 4) + (boundingBox / 2), -(armWidth / 2) + boundingBoxHalf, 0])
+            #translate([-forearmLength + sharpieDiameter, -(armWidth / 2) + boundingBoxHalf, 0])
                 cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
+/**/
         }
 
             intersection() {
             
-                translate([-forearmLength + boundingBox * 2, -(armWidth / 2) + boundingBoxHalf, 0])
+                translate([-forearmLength + boundingBox, -(armWidth / 2) + boundingBoxHalf, 0])
                     cube([forearmLength - (bearingOD / 2) - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
                 for (i = [ bearingOD / 2 - boundingBoxHalf: armWidth : forearmLength]) {
                     translate([ -i, 0, bearingStep])
