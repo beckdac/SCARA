@@ -11,7 +11,7 @@ all: ${TARGETS}
 include $(wildcard *.deps)
 
 %.scad:
-	printf 'use <SCARA.scad>\n$*();' > $@
+	printf 'use <SCARA.scad>\n$$fn = 64;\n$*();' > $@
 
 %.stl: %.scad
-	/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD -m make -o $@ -d $@.deps -D 'quality="production"' $<
+	/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD -m make -o $@ -d $@.deps $<
