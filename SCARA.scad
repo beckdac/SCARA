@@ -57,9 +57,13 @@ forearmLength = 75;
 *** ?
 */
 
+// SHOULDER
 // shoulder base
+module shoulderBasePlate() { // make me 
 color([.7, .7, 1]) 
     shoulderBase(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter);
+}
+shoulderBasePlate();
 // shoulder lower stepper
 rotate([0, 180, 0]) 
     translate([-8, 0, 10]) 
@@ -80,18 +84,24 @@ rotate([0, 0, 180])
     translate([-8, 0, 10 + 2 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep)]) 
         StepMotor28BYJ();
 // shoulder spacers
+module shoulderSpacerSet() { // make me
 color([.7, .6, .2])
 shoulderSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
 color([.7, .6, .2])
 translate([baseDeckExtension / 3, 0, 0])
 shoulderSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
+}
+shoulderSpacerSet();
 // end shoulder
 
 // lower arm including the shoulder - arm joint 
 //render()
+module armSection() { // make me
 color([1, .7, .7]) 
     translate([0, 0, shoulderBaseHeight + bearing6807_2RS_B]) 
         armLower(bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength);
+}
+armSection();
 // upper arm
 //render()
 color([.9, .7, .7]) 
@@ -111,16 +121,22 @@ rotate([0, 180, 0])
     translate([armLength - 8, 0, bearingStep * 2]) 
         StepMotor28BYJ();
 // arm spacers
+module armSpacerSet() { // make me
 color([.6, .6, .3])
     armSpacers(bearing6807_2RS_D + iFitAdjust, 0 * shoulderBaseHeight + (4 * bearing6807_2RS_B) + (8 * bearingStep));
+}
+armSpacerSet();
 // end arm
         
 // forearm pieces
 // lower
+module forearmSection() { // make me
 color([.1, .7, .1])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
 //translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (14 *bearingStep)])
     forearmLower(bearing6807_2RS_d - iFitAdjust, bearing6807_2RS_D + iFitAdjust, bearingStep, bearingStep, hubHeight + (bearing6807_2RS_B / 2) + (bearingStep/2), hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, forearmLength, boundingBox);
+}
+forearmSection();
 // upper
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
