@@ -41,6 +41,9 @@ armLength = 100;
 baseDeckExtension = 60;
 boundingBox = 8;
 boundingBoxHalf = boundingBox / 2;
+// forearm manipulator
+sharpieDiameter = 13;
+laserDiodeDiameter = 2 * 3.05;
 // 8 is distance from shaft center to screw center on x axis
 // 35 is screw center to screw center on y axis
 shaftCenterToMountHoldCenterXAxis = 8;
@@ -142,7 +145,7 @@ translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bea
 }
 forearmSection();
 // upper
-//render()
+render()
 color([.2, .8, .2])
 translate([-armLength, 0, shoulderBaseHeight + (bearing6807_2RS_B * 2) + (4 *bearingStep)])
     rotate([180, 0, 0])
@@ -470,18 +473,17 @@ module forearmLower(bearingID, bearingOD, stepHeight, stepWidth, hubHeight, hubR
                 cube([forearmLength, armWidth, bearingStep * 2], center=false);
             cylinder(h = bearingStep * 2, d = bearingOD);
  /* original */
-sharpieDiameter = 13;
             translate([-forearmLength, 0, 0])
-                 cylinder(h = bearingStep * 2, d = sharpieDiameter);
+                 cylinder(h = bearingStep * 2, d = laserDiodeDiameter);
                  // 4 on next line comes from dividing the bearingOD on the above line
-            translate([-forearmLength + sharpieDiameter, -(armWidth / 2) + boundingBoxHalf, 0])
+            translate([-forearmLength + laserDiodeDiameter, -(armWidth / 2) + boundingBoxHalf, 0])
                 cube([forearmLength - (bearingOD/2) - (boundingBox + boundingBoxHalf), armWidth - boundingBox, bearingStep * 2], center = false);
 /**/
         }
 
             intersection() {
             
-                translate([-forearmLength + boundingBox, -(armWidth / 2) + boundingBoxHalf, 0])
+                translate([-forearmLength + boundingBox / 2, -(armWidth / 2) + boundingBoxHalf, 0])
                     cube([forearmLength - (bearingOD / 2) - boundingBox, armWidth - boundingBox, bearingStep * 2], center = false);
                 for (i = [ bearingOD / 2 - boundingBoxHalf: armWidth : forearmLength]) {
                     translate([ -i, 0, bearingStep])
@@ -492,7 +494,23 @@ sharpieDiameter = 13;
                             cube([spokeWidth, armWidth + boundingBoxHalf, bearingStep * 2], center = true);
                 }
             }
-        
+        // laser mount
+        union() {
+            translate([-forearmLength, 0, 0])
+                difference() {
+                    union() {
+                        cylinder(h = bearingStep * 2, d = laserDiodeDiameter * 2);
+                        translate([-laserDiodeDiameter * 1.75, -1.5, 0])
+                            cube([laserDiodeDiameter + 4 * setScrewRadius, 3, bearingStep * 2]);
+                    }
+                    cylinder(h = bearingStep * 2, d = laserDiodeDiameter);
+                    #translate([ - laserDiodeDiameter * 1.75, -.5, 0])
+                        cube([laserDiodeDiameter + 4 * setScrewRadius, 1, bearingStep * 2], center = false);
+                    translate([-laserDiodeDiameter - 1.5 * setScrewRadius, laserDiodeDiameter * 2, bearingStep])
+                        rotate([90, 0, 0])
+                            cylinder(h = laserDiodeDiameter * 4, r = setScrewRadius);
+                }
+            }
 
     }
 }
