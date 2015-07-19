@@ -223,7 +223,7 @@ module armJointSpacer(bearingID, bearingOD, bearingStep, shaftBossDiameter, moun
 module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiameter, shaftBossDiameter, mountScrewDiameter) {
     mountHoleDepth = shoulderBaseHeight;
 
-    render(convexivity = 3)
+    //render(convexivity = 3)
     difference() {
         union () {
             cylinder(h = shoulderBaseHeight, d = shoulderBaseDiameter);
@@ -263,7 +263,7 @@ module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiamet
 
 module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength) {
     armWidth = bearingOD / 2;
-    //render(convexivity = 3)
+    render(convexivity = 3)
     difference() { 
     union() {
         armInnerJoint(bearingOD, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight);
