@@ -3,7 +3,12 @@ use <Hub_28BYJ-48.scad>;
 include <Bearing_6807-2RS.scad>;
 
 // global rendering parameters
-$fn = 24;
+quality = "development";
+if (quality == "production") {
+	$fn = 48;
+} else {
+	$fn = 24;
+}
 
 // library examples
 // translate([100, 100, 10]) { StepMotor28BYJ(); }
@@ -284,7 +289,7 @@ module shoulderBase(bearingID, bearingOD, shoulderBaseHeight, shoulderBaseDiamet
 
 module armLower(bearingOD, stepHeight, stepWidth, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight, armLength) {
     armWidth = bearingOD / 2;
-    render(convexivity = 3)
+    //render(convexivity = 3)
     difference() { 
     union() {
         armInnerJoint(bearingOD, bearingStep, bearingStep, hubHeight, hubRadius, shaftHeight, shaftRadius, setScrewRadius, setScrewHeight, spokeWidth, spokes, screwTabs, screwTabHeight);
