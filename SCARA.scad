@@ -194,7 +194,7 @@ module armSpacers(bearingOD, screwSpacerHeight) {
         translate([- armLength, 0, 0])
         rotate([0, 0, -30])
         radial_array_partial(vec = [0, 0, 1], n = 4, 2)
-            translate([bearingOD / 2 + (setScrewRadius * 2), 0, shoulderBaseHeight + bearing6807_2RS_B + 2 * bearingStep])
+            translate([bearingOD / 2 + (setScrewRadius * 8), 0, shoulderBaseHeight + bearing6807_2RS_B + 2 * bearingStep])
         difference() {
             union () {
                 cylinder(h = bearing6807_2RS_B * 2 + 4 * bearingStep, r = setScrewRadius * 2);
