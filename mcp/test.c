@@ -173,8 +173,8 @@ void init_stepper(struct stepper *step, int port1, int port2, int port3, int por
 int main(int argc, char **argv)
 {
         struct stepper step[2];
-        init_stepper(&step[0],14,15,17,18); // Pins for stepper 1
-        init_stepper(&step[1],25,23,24,22); // Pins for stepper 2
+        init_stepper(&step[0],4,17,18,27); // Pins for stepper 1
+        init_stepper(&step[1],22,23,24,25); // Pins for stepper 2
 
         // Ensure that all memory that we allocate is locked
         // to prevent swapping!

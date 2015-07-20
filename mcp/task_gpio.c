@@ -38,18 +38,17 @@ TASK_GPIO_USAGE:
 	return EXIT_FAILURE;
 }
 
-int task_gpio_test(int argc, char *argv[]) {
-	int pin, cycles, timeout, i;
+int task_gpio_test_speed(int argc, char *argv[]) {
+	int pin, cycles, i;
 	struct timeval  tv1, tv2;
 	double time_diff;
 
-	if (argc != 6) {
-		warning("usage: %s %s %s <GPIO pin> <bit flip cycles> <poll timeout in milliseconds>\n", argv[0], argv[1], argv[2]);
+	if (argc != 5) {
+		warning("usage: %s %s %s <GPIO pin> <bit flip cycles>\n", argv[0], argv[1], argv[2]);
 		return EXIT_FAILURE;
 	}
 	pin = atoi(argv[3]);
 	cycles = atoi(argv[4]);
-	timeout = atoi(argv[5]);
 
 	printf("%s: bit flip GPIO pin %d for %d cycles\n", argv[0], pin, cycles);
 
@@ -66,6 +65,27 @@ int task_gpio_test(int argc, char *argv[]) {
 	gettimeofday(&tv2, NULL);
 	time_diff = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000. + (double) (tv2.tv_sec - tv1.tv_sec);
 	printf("wall clock of %.4f seconds for %g pin changes per second\n", time_diff, (double)cycles/time_diff);
+
+	gpio_unexport(pin);
+
+	gpio_done();
+	
+	return EXIT_SUCCESS;
+}
+
+int task_gpio_test_poll(int argc, char *argv[]) {
+	int pin, timeout;
+
+	if (argc != 5) {
+		warning("usage: %s %s %s <GPIO pin> <poll timeout in milliseconds>\n", argv[0], argv[1], argv[2]);
+		return EXIT_FAILURE;
+	}
+	pin = atoi(argv[3]);
+	timeout = atoi(argv[4]);
+
+	gpio_init();
+
+	gpio_export(pin);
 
 	printf("%s: switching to input on pin %d and polling\n", argv[0], pin);
 	gpio_direction(pin, GPIO_DIR_IN);
