@@ -1,5 +1,6 @@
 ## sources
 SRCS_PI = main.c
+SRCS_PI = test.c
 SRCS_UNIVERSAL = error.c file.c gpio.c task.c task_gpio.c
 SRCS = $(SRCS_PI)
 
@@ -34,9 +35,12 @@ clean: depend
 	rm -f $(ELFS) $(BINS) $(OBJS) $(OBJS_UNIVERSAL)
 
 pi: $(OBJS_PI) $(OBJS_UNIVERSAL)
-	$(CC) -o $@ $(OBJS_PI) $(OBJS_UNIVERSAL) -lm -lpthread
+	$(CC) -o $@ $(OBJS_PI) $(OBJS_UNIVERSAL) -lm -lpthread -lrt
 
 test: $(BINS)
-	sudo ./pi gpio test 23 65535 5000
+	sudo ./pi gpio test 21 65535 5000
+	sudo ./pi gpio test 20 65535 5000
+	sudo ./pi gpio test 26 65535 5000
+	sudo ./pi gpio test 16 65535 5000
 
 include Makefile.depend
