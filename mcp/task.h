@@ -11,6 +11,7 @@ int (*task_lookup(const tasks_table_t *lookup_table, int argv_index, int argc, c
 
 // task_gpio.c
 int task_gpio(int argc, char *argv[]);
-int task_gpio_test(int argc, char *argv[]);
+int task_gpio_test_speed(int argc, char *argv[]);
+int task_gpio_test_poll(int argc, char *argv[]);
 
 #endif
