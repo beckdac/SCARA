@@ -1,7 +1,7 @@
 ## sources
 SRCS_PI = test.c
 SRCS_PI = main.c
-SRCS_UNIVERSAL = error.c file.c gpio.c task.c task_gpio.c task_core.c ui.c util.c stepper.c laser.c limits.c
+SRCS_UNIVERSAL = error.c file.c gpio.c task.c task_gpio.c task_core.c ui.c util.c stepper.c laser.c limits.c core.c
 SRCS = $(SRCS_PI)
 
 ## objects
@@ -13,11 +13,9 @@ OBJS = $(SRCS:.c=.o)
 BINS = pi
 
 DEFINES = 
-CFLAGS = -Wall -std=gnu99 -funsigned-char -funsigned-bitfields -ffunction-sections -fpack-struct -fshort-enums -I. $(DEFINES)
-CFLAGS = -Wall -std=gnu99 -funsigned-char -funsigned-bitfields -ffunction-sections -fpack-struct -I. $(DEFINES)
 CFLAGS = -Wall -std=gnu99 -Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -I. $(DEFINES)
 CFLAGS = -Wall -std=gnu99 -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -I. $(DEFINES)
-CFLAGS = -g -Wall -std=gnu99 -funsigned-char -funsigned-bitfields -ffunction-sections -fpack-struct -I. $(DEFINES)
+CFLAGS = -g -Wall -std=gnu99 -I. $(DEFINES)
 CC = gcc $(CFLAGS)
 
 all: $(BINS) 

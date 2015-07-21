@@ -16,10 +16,13 @@
 #include "util.h"
 
 struct stepper step[2];
+extern struct core core;
 
 uint8_t stepSequence[STEPPER_SEQUENCE_N][4] = STEPPER_SEQUENCE;
 
 void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4) {
+	//printf("stepperInit @ 0x%x\n", step);
+
 	step->pins[0] = pin1;
 	step->pins[1] = pin2;
 	step->pins[2] = pin3;
@@ -34,13 +37,26 @@ void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4) {
         gpio_export(pin4);
         gpio_direction(pin4, GPIO_DIR_OUT);
 
-        sem_init(&step->sem,0,0);
-        sem_init(&step->semRT,0,0);
+	//printf("initializing semaphore for stepper on pins %d - %d - %d - %d\n", pin1, pin2, pin3, pin4);
+        sem_init(&step->sem, 0, 0);
+        sem_init(&step->semRT, 0, 0);
 
 	step->pulseLen = 0;
 	step->pulseLenTarget = 0;
 	step->stepCurrent = 0;
 	step->stepTarget = 0;
+
+	step->homed[0] = 0;
+	step->homed[1] = 0;
+	step->limit[0] = 0;
+	step->limit[1] = 0;
+}
+
+static void stepperCleanup(struct stepper *step) {
+	gpio_unexport(step->pins[0]);
+	gpio_unexport(step->pins[1]);
+	gpio_unexport(step->pins[2]);
+	gpio_unexport(step->pins[3]);
 }
 
 void stepperPowerDown(struct stepper *step) {
@@ -58,6 +74,7 @@ void *stepperThread(void *arg) {
 	sCmd command = STEPPER_PWR_DN;
 	unsigned int pulseLen = 0, pulseLenTarget = 0;
 	int stepCurrent = 0, stepTarget = 0;
+	uint8_t homed[2] = { 0, 0 }, limit[2] = { 0, 0 };
 	int seqIndex = 0;
 
 	// enable real time priority for this thread
@@ -71,14 +88,20 @@ void *stepperThread(void *arg) {
         ts.tv_nsec = 0;
 
 	// start in the powered down state
+	printf("stepper alive: %d - %d - %d - %d\n", step->pins[0], step->pins[1], step->pins[2], step->pins[3]);
 	stepperPowerDown(step);
+
+	// notify core we are ready
+	sem_post(&step->semRT);
+	
         while(1) {
                 if (!sem_trywait(&step->sem)) {
-			//printf("stepper command = %d\n", step->command);
+			printf("stepper command = %d\n", step->command);
 			command = step->command;
 			switch (command) {
 				case STEPPER_EXIT:
 					stepperPowerDown(step);
+					stepperCleanup(step);
 					pthread_exit(0);
 					break;
 				case STEPPER_STATUS:
@@ -86,6 +109,10 @@ void *stepperThread(void *arg) {
 					step->stepTarget = stepTarget;
 					step->pulseLen = pulseLen;
 					step->pulseLenTarget = pulseLenTarget;
+					step->homed[0] = homed[0];
+					step->homed[1] = homed[1];
+					step->limit[0] = limit[0];
+					step->limit[1] = limit[1];
 					break;
 				case STEPPER_STOP:
 					stepTarget = stepCurrent;
@@ -97,6 +124,25 @@ void *stepperThread(void *arg) {
 				case STEPPER_MOVE_TO:
 					pulseLenTarget = step->pulseLenTarget;
 					stepTarget = step->stepTarget;
+					break;
+				case STEPPER_HOME_MIN:
+					stepperPowerDown(step);
+					homed[0] = 1;
+					limit[0] = 0;
+					stepCurrent = 0;
+					stepTarget = 0;
+					command = STEPPER_PWR_DN;
+					break;
+				case STEPPER_HOME_MAX:
+					stepperPowerDown(step);
+					if (homed[0]) {
+						homed[1] = 1;
+						limit[0] = stepCurrent;
+						stepTarget = 0;
+					} else {
+						warning("cannot home max before homing min!\n");
+					}
+					command = STEPPER_PWR_DN;
 					break;
 				default:
 					fatal_error("unexpected command for stepper thread\n");

@@ -20,17 +20,32 @@
 
 struct limits limits;
 
-void initLimitSwitch(struct limit *limit, uint8_t pin) {
+static void initLimitSwitch(struct limit *limit, uint8_t pin) {
 	limit->pin = pin;
 	gpio_export(limit->pin);
 	gpio_direction(limit->pin, GPIO_DIR_IN);
 	gpio_edge(limit->pin, GPIO_EDGE_FALLING);
-
-	sem_init(&limits.sem, 0, 0);
-	sem_init(&limits.semRT, 0, 0);
 }
 
-void limitsReadAll(void) {
+void limitsInit(void) {
+	printf("limitsThread initializing semaphores\n");
+	sem_init(&limits.sem, 0, 0);
+	sem_init(&limits.semRT, 0, 0);
+
+	initLimitSwitch(&limits.limit[LIMITS_SHLDR_MIN], LIMITS_SHLDR_MIN_PIN);
+	initLimitSwitch(&limits.limit[LIMITS_SHLDR_MAX], LIMITS_SHLDR_MAX_PIN);
+	initLimitSwitch(&limits.limit[LIMITS_FOREARM_MIN], LIMITS_FOREARM_MIN_PIN);
+	initLimitSwitch(&limits.limit[LIMITS_FOREARM_MAX], LIMITS_FOREARM_MAX_PIN);
+}
+
+static void limitSwitchCleanup(void) {
+	gpio_unexport(limits.limit[LIMITS_SHLDR_MIN].pin);
+	gpio_unexport(limits.limit[LIMITS_SHLDR_MAX].pin);
+	gpio_unexport(limits.limit[LIMITS_FOREARM_MIN].pin);
+	gpio_unexport(limits.limit[LIMITS_FOREARM_MAX].pin);
+}
+
+static void limitsReadAll(void) {
 	limits.limit[LIMITS_SHLDR_MIN].state = gpio_read(LIMITS_SHLDR_MIN_PIN);
 	limits.limit[LIMITS_SHLDR_MAX].state = gpio_read(LIMITS_SHLDR_MAX_PIN);
 	limits.limit[LIMITS_FOREARM_MIN].state = gpio_read(LIMITS_FOREARM_MIN_PIN);
@@ -43,14 +58,12 @@ void *limitsThread(void *arg) {
 	int i, fd, rv;
 	unsigned int timeout = 100; // ms
 
-	initLimitSwitch(&limits.limit[LIMITS_SHLDR_MIN], LIMITS_SHLDR_MIN_PIN);
-	initLimitSwitch(&limits.limit[LIMITS_SHLDR_MAX], LIMITS_SHLDR_MAX_PIN);
-	initLimitSwitch(&limits.limit[LIMITS_FOREARM_MIN], LIMITS_FOREARM_MIN_PIN);
-	initLimitSwitch(&limits.limit[LIMITS_FOREARM_MAX], LIMITS_FOREARM_MAX_PIN);
+	// notify core thread we are ready
+	sem_post(&limits.semRT);
 
 	while(1) {
 		if (!sem_trywait(&limits.sem)) {
-			//printf("limits command = %d\n", limits.command);
+			printf("limits command = %d\n", limits.command);
 			command = limits.command;
 			switch (command) {
 				case LIMIT_EXIT:
@@ -83,11 +96,4 @@ void *limitsThread(void *arg) {
 			printf("limit switch triggered\n");
 		}
 	}
-}
-
-void limitSwitchCleanup(void) {
-	gpio_unexport(limits.limit[LIMITS_SHLDR_MIN].pin);
-	gpio_unexport(limits.limit[LIMITS_SHLDR_MAX].pin);
-	gpio_unexport(limits.limit[LIMITS_FOREARM_MIN].pin);
-	gpio_unexport(limits.limit[LIMITS_FOREARM_MAX].pin);
 }

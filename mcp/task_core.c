@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
 #include <stdint.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -18,6 +19,7 @@
 #include "util.h"
 #include "laser.h"
 #include "limits.h"
+#include "core.h"
 
 extern const tasks_table_t tasks_core[];
 extern struct stepper step[2];
@@ -38,29 +40,19 @@ TASK_CORE_USAGE:
 	function = task_lookup(tasks_core, 2, argc, argv);
 
 	if (function) {
-		int retval;
+		struct timeval  tv1, tv2;
+		int rv;
+		double time_diff;
 
-		// lock all memory to prevent swapping
-		if (mlockall(MCL_FUTURE|MCL_CURRENT)) {
-			warning("unable to lock memory with mlockall()\n");
-		}
+		gettimeofday(&tv1, NULL);
 
-		// perform initialization
-		gpio_init();
-		stepperInit(&step[0],  4, 17, 18, 27);
-		stepperInit(&step[1], 22, 23, 24, 25);
+		rv = function(argc, argv);
 
-		// do the execution
-		retval = function(argc, argv);
+		gettimeofday(&tv2, NULL);
+		time_diff = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000. + (double) (tv2.tv_sec - tv1.tv_sec);
+		printf("session lasted %.4f seconds\n", time_diff);
 
-		// shut everything down
-		for (int s = 0; s < 2; ++s)
-			for (int p = 0; p < 4; ++p)
-				gpio_unexport(step[s].pins[p]);
-		gpio_done();
-
-		// return result
-		return retval;
+		return rv;
 	}
 
 	goto TASK_CORE_USAGE;
@@ -68,42 +60,13 @@ TASK_CORE_USAGE:
 	return EXIT_FAILURE;
 }
 
-int task_calibrate(int argc, char *argv[]) {
-	struct timeval  tv1, tv2;
-	double time_diff;
-
-	pthread_t stepperThreads[2];
-	pthread_t uiThread, limThread;
-
+int task_core_run(int argc, char *argv[]) {
 	if (argc != 3) {
 		warning("usage: %s %s %s\n", argv[0], argv[1], argv[2]);
 		return EXIT_FAILURE;
 	}
 
-	gettimeofday(&tv1, NULL);
-
-	laserInit(LASER_DEFAULT_PIN);
-
-	pthread_create(&uiThread, NULL, (void *)(userInterfaceThread), NULL);
-        pthread_create(&stepperThreads[0], NULL, (void *)(stepperThread), (void *)&step[0]);
-        pthread_create(&stepperThreads[1], NULL, (void *)(stepperThread), (void *)&step[1]);
-        pthread_create(&limThread, NULL, (void *)(limitsThread), NULL);
-
-	// join with the other threads
-        pthread_join(uiThread, NULL);
-	printf("collected user interface thread\n");
-        pthread_join(stepperThreads[0], NULL);
-	printf("collected stepper 0 thread\n");
-        pthread_join(stepperThreads[1], NULL);
-	printf("collected stepper 1 thread\n");
-	pthread_join(limThread, NULL);
-	printf("collected limit thread\n");
-
-	laserCleanup();
-
-	gettimeofday(&tv2, NULL);
-	time_diff = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000. + (double) (tv2.tv_sec - tv1.tv_sec);
-	printf("wall clock of %.4f seconds for calibration\n", time_diff);
+	coreRun();
 
 	return EXIT_SUCCESS;
 }

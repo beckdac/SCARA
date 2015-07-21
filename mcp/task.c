@@ -24,7 +24,7 @@ const tasks_table_t tasks_gpio[] = { \
 };
 
 const tasks_table_t tasks_core[] = { \
-	{ "calibrate",	&task_calibrate }, \
+	{ "run",	&task_core_run }, \
 	{ NULL,		NULL } /* end */
 };
 

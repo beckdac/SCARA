@@ -31,7 +31,7 @@ struct limits {
 	struct limit limit[LIMIT_SWITCHES];
 };
 
+void limitsInit(void);
 void *limitsThread(void *arg);
-void limitSwitchCleanup(void);
 
 #endif /* __LIMITS_H__ */

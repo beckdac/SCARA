@@ -3,7 +3,7 @@
 
 #define DEFAULT_SLEEP 1000000
 
-typedef enum stepperCommand { STEPPER_EXIT, STEPPER_STATUS, STEPPER_STOP, STEPPER_PWR_DN, STEPPER_MOVE_TO } sCmd;
+typedef enum stepperCommand { STEPPER_EXIT, STEPPER_STATUS, STEPPER_STOP, STEPPER_PWR_DN, STEPPER_MOVE_TO, STEPPER_HOME_MIN, STEPPER_HOME_MAX } sCmd;
 
 struct stepper {
         sem_t sem;
@@ -17,6 +17,9 @@ struct stepper {
 	unsigned int pulseLenTarget;
 	int stepCurrent;
 	int stepTarget;
+
+	uint8_t homed[2];	/* min & max, defaults to 0 - not homed */
+	int limit[2];		/* min = 0, max = 1, values in steps of limits, min should always be 0, only valid once homed */
 };
 
 void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4);
