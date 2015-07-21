@@ -4,9 +4,9 @@
 #define LIMIT_SWITCHES	4	// will be 6 when the Z-axis gets implemented
 
 // GPIO pin #s
-#define LIMITS_SHLDR_MIN_PIN	21
+#define LIMITS_SHLDR_MIN_PIN	16
 #define LIMITS_SHLDR_MAX_PIN	20
-#define LIMITS_FOREARM_MIN_PIN	16
+#define LIMITS_FOREARM_MIN_PIN	21
 #define LIMITS_FOREARM_MAX_PIN	26
 // structure indexes
 #define LIMITS_SHLDR_MIN	0

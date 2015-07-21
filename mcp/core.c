@@ -276,7 +276,7 @@ void *coreThread(void *arg) {
 						printf("forearm min limit triggered\n");
 						if (state == CORE_HOME) {
 							step[1].command = STEPPER_HOME_MIN;
-							sem_post(&step[0].sem);
+							sem_post(&step[1].sem);
 							wait_s1 = 1;
 						} else {
 							state = command = CORE_PWR_DN;
@@ -287,7 +287,7 @@ void *coreThread(void *arg) {
 						printf("forearm min limit triggered\n");
 						if (state == CORE_HOME) {
 							step[1].command = STEPPER_HOME_MAX;
-							sem_post(&step[0].sem);
+							sem_post(&step[1].sem);
 							wait_s1 = 1;
 						} else {
 							state = command = CORE_PWR_DN;

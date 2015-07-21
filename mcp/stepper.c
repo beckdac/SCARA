@@ -20,6 +20,9 @@ extern struct core core;
 
 uint8_t stepSequence[STEPPER_SEQUENCE_N][4] = STEPPER_SEQUENCE;
 
+#define SPEED_RAMP
+#undef SPEED_RAMP
+
 void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4) {
 	//printf("stepperInit @ 0x%x\n", step);
 
@@ -123,7 +126,22 @@ void *stepperThread(void *arg) {
 					break;
 				case STEPPER_MOVE_TO:
 					pulseLenTarget = step->pulseLenTarget;
-					stepTarget = step->stepTarget;
+					if (homed[0] && homed[1]) {
+						if (step->stepTarget >= step->limit[0] && step->stepTarget <= step->limit[1])
+							stepTarget = step->stepTarget;
+						else {
+							if (step->stepTarget < step->limit[0]) {
+								stepTarget = step->limit[0];
+								warning("request for position less than homed range (%d)\n", step->stepTarget);
+							} else {
+								stepTarget = step->limit[1];
+								warning("request for position larger than homed range (%d)\n", step->stepTarget);
+							}
+						}
+					} else {
+						stepTarget = step->stepTarget;
+						warning("moving on unhomed axis tp %d\n", stepTarget);
+					}
 					break;
 				case STEPPER_HOME_MIN:
 					stepperPowerDown(step);
@@ -132,6 +150,7 @@ void *stepperThread(void *arg) {
 					stepCurrent = 0;
 					stepTarget = 0;
 					command = STEPPER_PWR_DN;
+					printf("stepper homed min (pins %d - %d - %d - %d)\n", step->pins[0], step->pins[1], step->pins[2], step->pins[3]);
 					break;
 				case STEPPER_HOME_MAX:
 					stepperPowerDown(step);
@@ -139,6 +158,7 @@ void *stepperThread(void *arg) {
 						homed[1] = 1;
 						limit[0] = stepCurrent;
 						stepTarget = 0;
+						printf("stepper homed max at %d steps (pins %d - %d - %d - %d)\n", stepCurrent, step->pins[0], step->pins[1], step->pins[2], step->pins[3]);
 					} else {
 						warning("cannot home max before homing min!\n");
 					}
@@ -153,6 +173,7 @@ void *stepperThread(void *arg) {
                         sem_post(&step->semRT);
 		}
 		if (command == STEPPER_MOVE_TO) {
+#ifdef SPEED_RAMP
 			// accelerate or deccelerate
 			if (pulseLen == 0)
 				pulseLen = pulseLenTarget;
@@ -165,6 +186,9 @@ void *stepperThread(void *arg) {
 				if (pulseLen > pulseLenTarget)
 					pulseLen = pulseLenTarget;
 			}
+#else
+			pulseLen = pulseLenTarget;
+#endif
 			if (stepTarget < stepCurrent) {
 				seqIndex--;
 				if (seqIndex < 0)
@@ -190,41 +214,6 @@ void *stepperThread(void *arg) {
 		} else {
 			sleep_until(&ts, DEFAULT_SLEEP);
 		}
-
-#if 0
-                setiopin(step,0,1);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,3,0);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,1,1);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,0,0);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,2,1);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,1,0);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,3,1);
-                num_steps++;
-                sleep_until(&ts,delay);
-
-                setiopin(step,2,0);
-                num_steps++;
-                sleep_until(&ts,delay);
-#endif
-
         }
         return 0;
 }
