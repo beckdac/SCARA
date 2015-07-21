@@ -11,7 +11,6 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
-#include "compatability.h"
 #include "stepper.h"
 #include "ui.h"
 #include "util.h"
@@ -75,7 +74,7 @@ void *stepperThread(void *arg) {
 	stepperPowerDown(step);
         while(1) {
                 if (!sem_trywait(&step->sem)) {
-			printf("stepper command = %d\n", step->command);
+			//printf("stepper command = %d\n", step->command);
 			command = step->command;
 			switch (command) {
 				case STEPPER_EXIT:

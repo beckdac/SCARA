@@ -10,7 +10,6 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
-#include "compatability.h"
 
 const tasks_table_t tasks[] = { \
 	{ "gpio",	&task_gpio }, \

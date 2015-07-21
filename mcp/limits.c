@@ -14,7 +14,6 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
-#include "compatability.h"
 #include "stepper.h"
 #include "util.h"
 #include "limits.h"
@@ -51,7 +50,7 @@ void *limitsThread(void *arg) {
 
 	while(1) {
 		if (!sem_trywait(&limits.sem)) {
-			printf("limits command = %d\n", limits.command);
+			//printf("limits command = %d\n", limits.command);
 			command = limits.command;
 			switch (command) {
 				case LIMIT_EXIT:

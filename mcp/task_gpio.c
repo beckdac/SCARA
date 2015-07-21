@@ -10,7 +10,6 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
-#include "compatability.h"
 
 extern const tasks_table_t tasks_gpio[];
 

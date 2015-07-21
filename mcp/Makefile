@@ -12,7 +12,7 @@ OBJS = $(SRCS:.c=.o)
 ## output
 BINS = pi
 
-DEFINES = -DUSE_GPIO
+DEFINES = 
 CFLAGS = -Wall -std=gnu99 -funsigned-char -funsigned-bitfields -ffunction-sections -fpack-struct -fshort-enums -I. $(DEFINES)
 CFLAGS = -Wall -std=gnu99 -funsigned-char -funsigned-bitfields -ffunction-sections -fpack-struct -I. $(DEFINES)
 CFLAGS = -Wall -std=gnu99 -Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -I. $(DEFINES)

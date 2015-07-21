@@ -13,7 +13,6 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
-#include "compatability.h"
 #include "stepper.h"
 #include "ui.h"
 #include "util.h"
