@@ -176,6 +176,7 @@ void *stepperThread(void *arg) {
 					seqIndex = 0;
 				stepCurrent++;
 			} else {
+				printf("stepper reached target step %d\n", stepTarget);
 				command = STEPPER_STOP;
 #warning "this probably shouldn't be here"
 				stepperPowerDown(step);
