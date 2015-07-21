@@ -146,6 +146,7 @@ static void coreStatus(void) {
 
 static void corePowerDown(void) {
 	laserOff();
+	core.laser = 0;
 
 #ifdef ENABLE_STEPPERS
 	step[0].command = STEPPER_PWR_DN;
@@ -174,7 +175,7 @@ void *coreThread(void *arg) {
 	struct timespec ts;
 	struct sched_param sp;
 	// local variables
-	coreCmd command = CORE_PWR_DN;
+	coreCmd command = CORE_PWR_DN, state = CORE_PWR_DN;
 	uint8_t homed = 0, laser = 0;
 
 	printf("coreThread started...\n");
@@ -217,12 +218,25 @@ void *coreThread(void *arg) {
 					coreStatus();
 					break;
 				case CORE_PWR_DN:
+					state = command;
 					corePowerDown();
 					break;
 				case CORE_STOP:
+					state = command;
 					coreStop();
 					break;
 				case CORE_HOME:
+					state = command;
+					step[0].command = STEPPER_MOVE_TO;
+					step[0].stepTarget = -STEPS_PER_REV;
+					step[0].pulseLenTarget = DEFAULT_SLEEP;
+					sem_post(&step[0].sem);
+					//step[1].command = STEPPER_MOVE_TO;
+					//step[1].stepTarget = -STEPS_PER_REV;
+					//step[1].pulseLenTarget = DEFAULT_SLEEP;
+					//sem_post(&step[1].sem);
+					sem_wait(&step[0].semRT);
+					//sem_wait(&step[1].semRT);
 					break;
 				case CORE_LASER:
 					laser = core.laser;
@@ -230,6 +244,63 @@ void *coreThread(void *arg) {
 						laserOn();
 					else
 						laserOff();
+					break;
+				case CORE_LIMIT:
+					{
+					printf("core_limit\n");
+					uint8_t wait_s0 = 0, wait_s1 = 0;
+					corePowerDown();
+					if (!limits.limit[0].state) {
+						printf("arm min limit triggered\n");
+						if (state == CORE_HOME) {
+							step[0].command = STEPPER_HOME_MIN;
+							sem_post(&step[0].sem);
+							wait_s0 = 1;
+						} else {
+							state = command = CORE_PWR_DN;
+							corePowerDown();
+						}
+					}
+					if (!limits.limit[1].state) {
+						printf("arm max limit triggered\n");
+						if (state == CORE_HOME) {
+							step[0].command = STEPPER_HOME_MAX;
+							sem_post(&step[0].sem);
+							wait_s0 = 1;
+						} else {
+							state = command = CORE_PWR_DN;
+							corePowerDown();
+						}
+					}
+					if (!limits.limit[2].state) {
+						printf("forearm min limit triggered\n");
+						if (state == CORE_HOME) {
+							step[1].command = STEPPER_HOME_MIN;
+							sem_post(&step[0].sem);
+							wait_s1 = 1;
+						} else {
+							state = command = CORE_PWR_DN;
+							corePowerDown();
+						}
+					}
+					if (!limits.limit[3].state) {
+						printf("forearm min limit triggered\n");
+						if (state == CORE_HOME) {
+							step[1].command = STEPPER_HOME_MAX;
+							sem_post(&step[0].sem);
+							wait_s1 = 1;
+						} else {
+							state = command = CORE_PWR_DN;
+							corePowerDown();
+						}
+					}
+					if (wait_s0) {
+						sem_wait(&step[0].semRT);
+					}
+					if (wait_s1) {
+						sem_wait(&step[1].semRT);
+					}
+					}
 					break;
 				default:
 					break;

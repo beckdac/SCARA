@@ -17,8 +17,10 @@
 #include "stepper.h"
 #include "util.h"
 #include "limits.h"
+#include "core.h"
 
 struct limits limits;
+extern struct core core;
 
 static void initLimitSwitch(struct limit *limit, uint8_t pin) {
 	limit->pin = pin;
@@ -94,6 +96,10 @@ void *limitsThread(void *arg) {
 			warning("limit switch polling failed!\n");
 		} else if (rv > 0) {
 			printf("limit switch triggered\n");
+			limitsReadAll();
+			core.command = CORE_LIMIT;
+			sem_post(&core.sem);
+			sem_wait(&core.semRT);
 		}
 	}
 }

@@ -1,7 +1,7 @@
 #ifndef __CORE_H__
 #define __CORE_H__
 
-typedef enum coreCommand { CORE_EXIT, CORE_STATUS, CORE_PWR_DN, CORE_STOP, CORE_HOME, CORE_LASER } coreCmd;
+typedef enum coreCommand { CORE_EXIT, CORE_STATUS, CORE_STOP, CORE_PWR_DN, CORE_LIMIT, CORE_HOME, CORE_LASER } coreCmd;
 
 void coreRun(void);
 
