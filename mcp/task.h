@@ -14,4 +14,8 @@ int task_gpio(int argc, char *argv[]);
 int task_gpio_test_speed(int argc, char *argv[]);
 int task_gpio_test_poll(int argc, char *argv[]);
 
+// task_core.c
+int task_core(int argc, char *argv[]);
+int task_calibrate(int argc, char *argv[]);
+
 #endif

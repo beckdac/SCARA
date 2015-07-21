@@ -1,7 +1,7 @@
 ## sources
-SRCS_PI = main.c
 SRCS_PI = test.c
-SRCS_UNIVERSAL = error.c file.c gpio.c task.c task_gpio.c
+SRCS_PI = main.c
+SRCS_UNIVERSAL = error.c file.c gpio.c task.c task_gpio.c task_core.c ui.c util.c stepper.c laser.c limits.c
 SRCS = $(SRCS_PI)
 
 ## objects

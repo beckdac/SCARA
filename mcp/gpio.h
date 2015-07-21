@@ -22,6 +22,16 @@
 #define GPIO_VALUE_HIGH		1
 #define GPIO_VALUE_HIGH_STR	"1"
 
+#define GPIO_EDGE_FILENAME	"/sys/class/gpio/gpio%d/edge"
+#define GPIO_EDGE_NONE		0
+#define GPIO_EDGE_NONE_STR	"none"
+#define GPIO_EDGE_RISING	1	
+#define GPIO_EDGE_RISING_STR	"rising"
+#define GPIO_EDGE_FALLING	2	
+#define GPIO_EDGE_FALLING_STR	"falling"
+#define GPIO_EDGE_BOTH		3	
+#define GPIO_EDGE_BOTH_STR	"both"
+
 #define GPIO_POLL_FOREVER	-1
 
 typedef struct gpio_pin_config_file {
@@ -34,6 +44,7 @@ typedef struct gpio_pin_config {
 	uint8_t	init;
 	gpio_file_t dir;
 	gpio_file_t value;
+	gpio_file_t edge;
 } gpio_pin_t;
 
 typedef struct gpio_config {
@@ -50,9 +61,11 @@ void gpio_open_pin_file(char *filename_template, uint8_t pin, int oflag, gpio_fi
 void gpio_close_file(gpio_file_t *gf);
 void gpio_export(uint8_t pin);
 void gpio_unexport(uint8_t pin);
+void gpio_edge(uint8_t pin, uint8_t edge);
 void gpio_direction(uint8_t pin, uint8_t dir);
+int gpio_get_value_fd(uint8_t pin);
 int gpio_read(uint8_t pin);
 void gpio_write(uint8_t pin, uint8_t value);
-int gpio_poll(uint8_t pin, int timeout);
+int gpio_poll(uint8_t pin, int timeout, uint8_t edge);
 
 #endif /* _GPIO_H_ */

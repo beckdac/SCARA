@@ -14,12 +14,18 @@
 
 const tasks_table_t tasks[] = { \
 	{ "gpio",	&task_gpio }, \
+	{ "core",	&task_core }, \
 	{ NULL,		NULL } /* end */
 };
 
 const tasks_table_t tasks_gpio[] = { \
 	{ "test_speed",	&task_gpio_test_speed }, \
 	{ "test_poll",	&task_gpio_test_poll }, \
+	{ NULL,		NULL } /* end */
+};
+
+const tasks_table_t tasks_core[] = { \
+	{ "calibrate",	&task_calibrate }, \
 	{ NULL,		NULL } /* end */
 };
 

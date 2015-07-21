@@ -124,6 +124,8 @@ void gpio_export(uint8_t pin) {
 	// preopen the direction and value files
 	gpio_open_pin_file(GPIO_DIR_FILENAME, pin, O_WRONLY, &gpio.pin[pin].dir);
 	gpio_open_pin_file(GPIO_VALUE_FILENAME, pin, O_RDWR, &gpio.pin[pin].value);
+	gpio_open_pin_file(GPIO_EDGE_FILENAME, pin, O_RDWR, &gpio.pin[pin].edge);
+
 	gpio.pin[pin].init = 1;
 }
 
@@ -142,6 +144,7 @@ void gpio_unexport(uint8_t pin) {
 	// close the direction and value files
 	gpio_close_file(&gpio.pin[pin].dir);
 	gpio_close_file(&gpio.pin[pin].value);
+	gpio_close_file(&gpio.pin[pin].edge);
 	gpio.pin[pin].init = 0;
 
 #ifdef GPIO_VERBOSE
@@ -181,6 +184,19 @@ void gpio_direction(uint8_t pin, uint8_t dir) {
 		perror(NULL);
 		fatal_error("unable to write %d bytes to direction file '%s'\n", (dir == GPIO_DIR_IN ? 2 : 3), gpio.pin[pin].dir.filename);
 	}
+}
+
+int gpio_get_value_fd(uint8_t pin) {
+#ifdef GPIO_PARANOID
+	if (!gpio.init)
+		fatal_error("gpio_read called before gpio_init (pin = %d)\n", pin);
+	if (pin >= GPIO_PINS)
+		fatal_error("invalid pin number passed to gpio_read (pin = %d)\n", pin);
+	if (!gpio.pin[pin].init)
+		fatal_error("pin %d is not initialized (exported) before call to gpio_read\n", pin);
+#endif
+
+	return gpio.pin[pin].value.fd;
 }
 
 int gpio_read(uint8_t pin) {
@@ -240,7 +256,33 @@ void gpio_write(uint8_t pin, uint8_t value) {
 	}
 }
 
-int gpio_poll(uint8_t pin, int timeout) {
+void gpio_edge(uint8_t pin, uint8_t edge) {
+	ssize_t rv;
+	char *edge_string = (edge == GPIO_EDGE_NONE ? GPIO_EDGE_NONE_STR : (edge == GPIO_EDGE_RISING ? GPIO_EDGE_RISING_STR : (edge == GPIO_EDGE_FALLING ? GPIO_EDGE_FALLING_STR : GPIO_EDGE_BOTH_STR)));
+
+#ifdef GPIO_VERBOSE
+	printf("writing edge '%s' for pin %d to file '%s'\n", edge_string, pin, gpio.pin[pin].edge.filename);
+#endif
+#ifdef GPIO_PARANOID
+	if (!gpio.init)
+		fatal_error("gpio_write called before gpio_init (pin = %d)\n", pin);
+	if (pin >= GPIO_PINS)
+		fatal_error("invalid pin number passed to gpio_write (pin = %d)\n", pin);
+	if (!gpio.pin[pin].init)
+		fatal_error("pin %d is not initialized (exported) before call to gpio_write\n", pin);
+#endif
+
+	// rewind to begining of file
+	lseek(gpio.pin[pin].edge.fd, 0, SEEK_SET);
+	// write the value
+	rv = write(gpio.pin[pin].edge.fd, edge_string, strlen(edge_string));
+	if (rv < 0) {
+		perror(NULL);
+		fatal_error("unable to write to GPIO edge file '%s'\n", gpio.pin[pin].edge.filename);
+	}
+}
+
+int gpio_poll(uint8_t pin, int timeout, uint8_t edge) {
 	struct pollfd pfd;
 	int rv;
 

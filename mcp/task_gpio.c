@@ -62,6 +62,7 @@ int task_gpio_test_speed(int argc, char *argv[]) {
 	for (i = 0; i < cycles; ++i) {
 		gpio_write(pin, i % 2);
 	}
+	gpio_write(pin, 0);
 	gettimeofday(&tv2, NULL);
 	time_diff = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000. + (double) (tv2.tv_sec - tv1.tv_sec);
 	printf("wall clock of %.4f seconds for %g pin changes per second\n", time_diff, (double)cycles/time_diff);
@@ -87,12 +88,17 @@ int task_gpio_test_poll(int argc, char *argv[]) {
 
 	gpio_export(pin);
 
+while(1) {
 	printf("%s: switching to input on pin %d and polling\n", argv[0], pin);
 	gpio_direction(pin, GPIO_DIR_IN);
+	printf("%s: pin %d = %d\n", argv[0], pin, gpio_read(pin));
 	printf("%s: non-blocking poll\n", argv[0]);
-	gpio_poll(pin, 0);
+	gpio_poll(pin, 0, GPIO_EDGE_BOTH);
+	printf("%s: pin %d = %d\n", argv[0], pin, gpio_read(pin));
 	printf("%s: polling for %d ms\n", argv[0], timeout);
-	gpio_poll(pin, timeout);
+	gpio_poll(pin, timeout, GPIO_EDGE_BOTH);
+	printf("%s: pin %d = %d\n", argv[0], pin, gpio_read(pin));
+}
 
 	gpio_unexport(pin);
 
