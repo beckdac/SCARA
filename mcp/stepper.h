@@ -2,7 +2,7 @@
 #define __STEPPER_H__
 
 // 28BYJ-48
-#define STEPS_PER_REV 4096
+#define STEPS_PER_REV 64. * (25792./405.)
 
 #define DEFAULT_SLEEP 1000000
 

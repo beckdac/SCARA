@@ -20,7 +20,7 @@
 #include "core.h"
 #include "kinematics.h"
 
-int kinematics_forward(float *x, float *y, float L1, float L2, float S, float E) {
+int kinematicsForward(float *x, float *y, float L1, float L2, float S, float E) {
 	if (L1 <= 0 || L2 <= 0)
 		return 0;
 	*x = L1 * cosf(S) + L2 * cosf(S + E);
@@ -28,7 +28,7 @@ int kinematics_forward(float *x, float *y, float L1, float L2, float S, float E)
 	return 1;
 }
 
-int kinematics_inverse(float x, float y, float L1, float L2, float *S, float *E) {
+int kinematicsInverse(float x, float y, float L1, float L2, float *S, float *E) {
 	if (L1 <= 0 || L2 <= 0)
 		return 0;
 	*E = acosf((x*x + y*y - L1*L1 - L2*L2)/(2. * L1 * L2));
@@ -36,17 +36,43 @@ int kinematics_inverse(float x, float y, float L1, float L2, float *S, float *E)
 	return 1;
 }
 
-int kinematics_test(int argc, char *argv[]) {
+float kinematicsStepToRad(int steps) {
+	return (float)steps / STEPS_PER_REV * (2. * M_PI);
+}
+
+int kinematicsRadToStep(float rad) {
+	return (int)lroundf(rad / (2. * M_PI) * STEPS_PER_REV);
+}
+
+float kinematicsRadToDeg(float rad) {
+	return rad * 180. / M_PI;
+}
+
+float kinematicsDegToRad(float deg) {
+	return deg * M_PI / 180.;
+}
+
+int kinematicsTest(int argc, char *argv[]) {
 	float x, y, L1, L2, S, E;
 
-	x = 0.5;
-	y = 0.46;
-	L1 = .4;
-	L2 = .3;
+	if (argc != 4) {
+		int i;
+KINEMATICS_TEST_USAGE:
+		warning("usage: %s %s kinematics <X> <Y>\n", argv[0], argv[1]);
+		return EXIT_FAILURE;
+	}
+
+	x = atof(argv[2]);
+	y = atof(argv[3]);
+	L1 = L1_MM;
+	L2 = L1_MM;
 	printf("x = %.2f   y = %.2f   L1 = %.2f   L2 = %.2f\n", x, y, L1, L2);
-	kinematics_inverse(x, y, L1, L2, &S, &E);
-	printf("S = %.4f   E = %.4f\n", S * 180. / M_PI, E * 180. / M_PI);
-	kinematics_forward(&x, &y, L1, L2, S, E);
+	kinematicsInverse(x, y, L1, L2, &S, &E);
+	printf("raw  -  S = %.4f   E = %.4f\n", S, E);
+	printf("deg  -  S = %.4f   E = %.4f\n", kinematicsRadToDeg(S), kinematicsRadToDeg(E));
+	printf("rad  -  S = %.4f   E = %.4f\n", kinematicsDegToRad(kinematicsRadToDeg(S)), kinematicsDegToRad(kinematicsRadToDeg(E)));
+	printf("step -  S = %4d   E = %4d\n", kinematicsRadToStep(S), kinematicsRadToStep(E));
+	kinematicsForward(&x, &y, L1, L2, S, E);
 	printf("x = %.4f   y = %.4f\n", x, y);
 
 	return EXIT_SUCCESS;

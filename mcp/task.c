@@ -15,7 +15,7 @@
 const tasks_table_t tasks[] = { \
 	{ "gpio",	&task_gpio }, \
 	{ "core",	&task_core }, \
-	{ "kinematics", &kinematics_test }, \
+	{ "kinematics", &kinematicsTest }, \
 	{ NULL,		NULL } /* end */
 };
 
