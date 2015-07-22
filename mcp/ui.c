@@ -42,7 +42,7 @@ void userInterfaceThread(void *arg) {
 
         while(1) {
                 char buf[80];
-                printf("command (q, s, h, d, o, c, l, a, m, i, e, p): ");
+                printf("command (q, s, h, d, o, c, z, l, a, m, i, e, p): ");
                 fgets(buf,79,stdin);
                 if (buf[0] == 'q') {
 			core.command = CORE_EXIT;
@@ -55,6 +55,7 @@ void userInterfaceThread(void *arg) {
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
 			printf("Positioning queue has %d entries\n", queueCount(&core.queue));
+			printf("Moves in progress: %d\n", movesInProgress());
 			printf("Laser on pin %d is %s\n", laserGetPin(), (laserGetState() ? "on" : "off"));
 			printf("Stepper 0\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tcenter\t%d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
 				step[0].homed[0], step[0].homed[1], step[0].limit[0], step[0].limit[1], step[0].center,
@@ -91,6 +92,16 @@ void userInterfaceThread(void *arg) {
 				core.laser = 1;
 			sem_post(&core.sem);
                         sem_wait(&core.semRT);
+		} else if (buf[0] == 'z') {
+			pthread_mutex_lock(&core.movesInProgressMutex);
+			core.movesInProgress = 0;
+			for (int i; i < STEPPER_COUNT; ++i)
+				core.moveInProgress[i] = 0;
+			pthread_mutex_unlock(&core.movesInProgressMutex);
+			while (!queueEmpty(&core.queue)) {
+				int *data = queueDequeue(&core.queue);
+				free(data);
+			}
                 } else if (buf[0] == 'a') {
 			unsigned stepno;
                         int stepTarget;
@@ -106,23 +117,24 @@ void userInterfaceThread(void *arg) {
                 } else if (buf[0] == 'm') {
 			float x, y, S, E;
                         if (sscanf(buf,"m %f %f", &x, &y) == 2) {
-				printf("moving to (%.2f, %.2f)\n", x, y);
 				kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
+				printf("moving to (%.2f, %.2f) - %d  %d - %.4f  %.4f - %.4f  %.4f - %d  %d\n", x, y, kinematicsRadToStep(S), kinematicsRadToStep(E), S, E, kinematicsRadToDeg(S), kinematicsRadToDeg(E), kinematicsRadToStep(S) + step[0].center, step[1].center - kinematicsRadToStep(E));
+#if 1
 				step[0].command = STEPPER_MOVE_TO;
 				step[0].pulseLenTarget = DEFAULT_SLEEP;
-				step[0].stepTarget = S + step[0].center;
+				step[0].stepTarget = kinematicsRadToStep(S) + step[0].center;
                                 sem_post(&step[0].sem);
                                 sem_wait(&step[0].semRT);
 				step[1].command = STEPPER_MOVE_TO;
 				step[1].pulseLenTarget = DEFAULT_SLEEP;
-				step[1].stepTarget = E + step[1].center;
+				step[1].stepTarget = step[1].center - kinematicsRadToStep(E);
                                 sem_post(&step[1].sem);
                                 sem_wait(&step[1].semRT);
+#endif
 			}
 			
 		} else if (buf[0] == 'i') {
 			float x, y, x1, y1, x2, y2, S, E, d, d2, segmentLen;
-printf("%s\n", buf);
 			int segments, i;
                         if (sscanf(buf,"i %f %f %f %f %d", &x1, &y1, &x2, &y2, &segments) == 5) {
 				printf("rendering line from (%.2f, %.2f) to (%.2f, %.2f) in %d segments\n", x1, y1, x2, y2, segments);
@@ -138,10 +150,11 @@ printf("%s\n", buf);
 					kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
 					data[0] = kinematicsRadToStep(S);
 					data[1] = kinematicsRadToStep(E);
+//					printf("enQ\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\n", kinematicsRadToStep(S), kinematicsRadToStep(E), S, E, kinematicsRadToDeg(S), kinematicsRadToDeg(E));
 					queueEnqueue(&core.queue, (void *)data);
 				}
 
-				printf("queue is now %d entries\n", queueCount(&core.queue));
+				printf("queue has %d entries\n", queueCount(&core.queue));
 			}
 		} else if (buf[0] == 'e') {
 			printf("queue is %d entries\n", queueCount(&core.queue));
@@ -155,15 +168,17 @@ printf("%s\n", buf);
 			struct queue *q = &core.queue;
 
 			pthread_mutex_lock(&q->mutex);
-			i=q->first;
-			while (i != q->last) {
+			if (q->count > 0) {
+				i=q->first;
+				while (i != q->last) {
+					data = (int *)q->q[i];
+					printf("%d\t%d\n", data[0], data[1]);
+					i = (i+1) % q->size;
+				}
 				data = (int *)q->q[i];
 				printf("%d\t%d\n", data[0], data[1]);
-				i = (i+1) % q->size;
+				printf("\n");
 			}
-			data = (int *)q->q[i];
-			printf("%d\t%d\n", data[0], data[1]);
-			printf("\n");
 			pthread_mutex_unlock(&q->mutex);
 		} else {
 			warning("unknown keyboard command in userInterfaceThread: %s\n", buf);

@@ -68,7 +68,7 @@ void *limitsThread(void *arg) {
 
 	while(1) {
 		if (!sem_trywait(&limits.sem)) {
-			printf("limits command = %d\n", limits.command);
+			//printf("limits command = %d\n", limits.command);
 			command = limits.command;
 			switch (command) {
 				case LIMIT_EXIT:
@@ -98,7 +98,7 @@ void *limitsThread(void *arg) {
 			perror(NULL);
 			warning("limit switch polling failed!\n");
 		} else if (rv > 0) {
-			printf("limit switch triggered\n");
+			//printf("limit switch triggered\n");
 			core.command = CORE_LIMIT;
 			// can sometimes bounce
 			// limitsReadAll();
@@ -111,7 +111,7 @@ void *limitsThread(void *arg) {
 					limits.limit[i].state = 1;
 				}
 			}
-			printf("%d\t%d\t%d\t%d\n", limits.limit[0].state, limits.limit[1].state, limits.limit[2].state, limits.limit[3].state);
+			printf("limits - %d\t%d\t%d\t%d\n", limits.limit[0].state, limits.limit[1].state, limits.limit[2].state, limits.limit[3].state);
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
 		}

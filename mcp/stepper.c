@@ -139,13 +139,14 @@ void *stepperThread(void *arg) {
 						pulseLenTarget = step->pulseLenTarget;
 						stepTarget = center;
 						command = STEPPER_MOVE_TO;
+						coreIncrementMovesInProgress(step->index);
 					} else {
 						warning("cannot center an unhomed axis!\n");
 					}
 					break;
 				case STEPPER_MOVE_TO:
 					pulseLenTarget = step->pulseLenTarget;
-					printf("%d\t%d\t%d\n", step->index, step->stepTarget, step->pulseLenTarget);
+					printf("move_to\t%d\t%d\t%d\n", step->index, step->stepTarget, step->pulseLenTarget);
 					if (homed[0] && homed[1]) {
 						if (step->stepTarget >= limit[0] && step->stepTarget <= limit[1])
 							stepTarget = step->stepTarget;
@@ -162,6 +163,7 @@ void *stepperThread(void *arg) {
 						stepTarget = step->stepTarget;
 						warning("moving on unhomed axis to %d\n", stepTarget);
 					}
+					coreIncrementMovesInProgress(step->index);
 					break;
 				case STEPPER_UNHOME:
 					homed[0] = 0;
@@ -171,6 +173,7 @@ void *stepperThread(void *arg) {
 					break;
 				case STEPPER_HOME_MIN:
 					stepperPowerDown(step);
+					coreDecrementMovesInProgress(step->index);
 					homed[0] = 1;
 					limit[0] = 0;
 					stepCurrent = 0;
@@ -180,6 +183,7 @@ void *stepperThread(void *arg) {
 					break;
 				case STEPPER_HOME_MAX:
 					stepperPowerDown(step);
+					coreDecrementMovesInProgress(step->index);
 					if (homed[0]) {
 						homed[1] = 1;
 						limit[1] = stepCurrent;
@@ -228,18 +232,17 @@ void *stepperThread(void *arg) {
 					seqIndex = 0;
 				stepCurrent++;
 			} else {
-				printf("stepper reached target step %d\n", stepTarget);
+				printf("stepper %d reached target step %d\n", step->index, stepTarget);
 #warning "do we really want to power down?"
 #warning "this only works because core is the only thread updating this?"
-				command = step->command = STEPPER_PWR_DN;
+				command = STEPPER_PWR_DN;
 				stepperPowerDown(step);
 //
+				coreDecrementMovesInProgress(step->index);
+
 				core.command = CORE_MOVE_TO_COMPLETE;
-printf("post\n");
 				sem_post(&core.sem);
-printf("wait\n");
-				sem_wait(&core.semRT);
-printf("done\n");
+				//sem_wait(&core.semRT);
 			}
 			if (command == STEPPER_MOVE_TO) {
 				for (int i = 0; i < 4; ++i) {

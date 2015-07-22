@@ -40,6 +40,22 @@ extern struct limits limits;
 extern struct ui ui;
 struct core core;
 
+void coreIncrementMovesInProgress(uint8_t index) {
+	//printf("stepper %d incrementing moves in progress\n", index);
+        pthread_mutex_lock(&core.movesInProgressMutex);
+        core.movesInProgress++;
+        core.moveInProgress[index] = 1;
+        pthread_mutex_unlock(&core.movesInProgressMutex);
+}
+
+void coreDecrementMovesInProgress(uint8_t index) {
+	//printf("stepper %d decrementing moves in progress\n", index);
+        pthread_mutex_lock(&core.movesInProgressMutex);
+        core.movesInProgress--;
+        core.moveInProgress[index] = 0;
+        pthread_mutex_unlock(&core.movesInProgressMutex);
+}
+
 static void coreInitSemaphores(void) {
 	//printf("core initializing semaphores\n");
 	sem_init(&core.sem, 0, 0);
@@ -177,13 +193,39 @@ static void coreStop(void) {
 #endif
 }
 
+static void coreDequeueExecute(void) {
+	int *data = (int *)queueDequeue(&core.queue);
+	printf("deQ\t%d  %d  ->  %d  %d\n", data[0], data[1], data[0] + step[0].center, step[1].center - data[1]);
+	step[0].command = STEPPER_MOVE_TO;
+	step[0].stepTarget = data[0] + step[0].center;
+	step[0].pulseLenTarget = DEFAULT_SLEEP;
+	sem_post(&step[0].sem);
+	step[1].command = STEPPER_MOVE_TO;
+	step[1].stepTarget = step[1].center - data[1];
+	step[1].pulseLenTarget = DEFAULT_SLEEP;
+	sem_post(&step[1].sem);
+	printf("about to wait\n");
+	sem_wait(&step[0].semRT);
+	printf("waited now about to wait\n");
+	sem_wait(&step[1].semRT);
+	printf("waited done\n");
+	free(data);
+}
+
+int movesInProgress(void) {
+	int rv;
+	pthread_mutex_lock(&core.movesInProgressMutex);
+	rv = core.movesInProgress;
+	pthread_mutex_unlock(&core.movesInProgressMutex);
+	return rv;
+}
+
 void *coreThread(void *arg) {
 	struct timespec ts;
 	struct sched_param sp;
 	// local variables
 	coreCmd command = CORE_PWR_DN, state = CORE_PWR_DN;
 	uint8_t homed = 0, laser = 0;
-	int i;
 
 	printf("coreThread started...\n");
 
@@ -196,6 +238,9 @@ void *coreThread(void *arg) {
 	// initialize monotonically increasing clock
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	ts.tv_nsec = 0;
+
+	// setup mutex
+	pthread_mutex_init(&core.movesInProgressMutex, NULL);
 
 	// wait for all threads to post
 	printf("coreThread waiting for threads to post...\n");
@@ -238,34 +283,18 @@ void *coreThread(void *arg) {
 			sem_post(&core.semRT);
 					break;
 				case CORE_MOVE_TO_COMPLETE:
-			sem_post(&core.semRT);
-printf("move to complete\n");
-printf("state = %d\n", state);
+					//sem_post(&core.semRT);
+//printf(">> movesInProgress = %d\n", movesInProgress());
 					if (state == CORE_HOME) {
 						// noop
 					} else {
-						// if any other stepper motions are pending don't issue a new command */
-						for (i = 0; i < STEPPER_COUNT; ++i)
-							if (step[i].command == STEPPER_MOVE_TO)
-								break;
-printf("i = %d\n", i);
 						// if all steppers are done, then issue the next command, if any */
-						if (i == STEPPER_COUNT && queueCount(&core.queue) > 0) {
-printf("dequeuening and posting\n");
-							int *data = (int *)queueDequeue(&core.queue);
-							step[0].command = STEPPER_MOVE_TO;
-							step[0].stepTarget = data[0] + step[0].center;
-							step[0].pulseLenTarget = DEFAULT_SLEEP;
-							sem_post(&step[0].sem);
-							step[1].command = STEPPER_MOVE_TO;
-							step[1].stepTarget = data[1] + step[1].center;
-							step[1].pulseLenTarget = DEFAULT_SLEEP;
-							sem_post(&step[1].sem);
-							sem_wait(&step[0].semRT);
-							sem_wait(&step[1].semRT);
-							free(data);
+						if (!movesInProgress() && queueCount(&core.queue) > 0) {
+//printf(">>>> dequeuening and posting\n");
+							coreDequeueExecute();
 						}
 					}
+//printf(">> move to complete handler done\n");
 					break;
 				case CORE_HOME:
 					state = command;
@@ -283,6 +312,7 @@ printf("dequeuening and posting\n");
 					sem_wait(&limits.semRT);
 					if (!limits.limit[0].state || !limits.limit[1].state || !limits.limit[2].state || !limits.limit[3].state) {
 						warning("at least one limit switch is already being depressed, fix this and try again\n");
+			sem_post(&core.semRT);
 						break;
 					} 
 					// proceed
@@ -336,7 +366,6 @@ printf("dequeuening and posting\n");
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
-			sem_post(&core.semRT);
 					}
 					if (!limits.limit[1].state) {
 						printf("arm max limit triggered\n");
@@ -349,7 +378,7 @@ printf("dequeuening and posting\n");
 							sem_wait(&step[0].semRT);
 							// back this stepper off the limit
 							step[0].command = STEPPER_MOVE_TO;
-							printf("step[0].center = %d\n", step[0].center);
+							printf("shoulder center = %d\n", step[0].center);
 							step[0].stepTarget = step[0].center;
 							step[0].pulseLenTarget = DEFAULT_SLEEP;
 							sem_post(&step[0].sem);
@@ -364,7 +393,6 @@ printf("dequeuening and posting\n");
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
-			sem_post(&core.semRT);
 					}
 					if (!limits.limit[2].state) {
 						printf("forearm min limit triggered\n");
@@ -384,7 +412,6 @@ printf("dequeuening and posting\n");
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
-			sem_post(&core.semRT);
 					}
 					if (!limits.limit[3].state) {
 						printf("forearm max limit triggered\n");
@@ -398,36 +425,28 @@ printf("dequeuening and posting\n");
 							homed = 1;
 							// back this stepper off the limit
 							step[1].command = STEPPER_MOVE_TO;
-							printf("step[1].center = %d\n", step[1].center);
+							printf("elbow center = %d\n", step[1].center);
 							step[1].stepTarget = step[1].center;
 							step[1].pulseLenTarget = DEFAULT_SLEEP;
 							sem_post(&step[1].sem);
 							sem_wait(&step[1].semRT);
 							printf("arm is homed!\n");
 #warning is this the correct state?
-							state = CORE_PWR_DN;
+							state = CORE_CENTER;
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
-			sem_post(&core.semRT);
 					}
-					break;
-				case CORE_EXECUTE_QUEUE: {
-						int *data = (int *)queueDequeue(&core.queue);
-						step[0].command = STEPPER_MOVE_TO;
-						step[0].stepTarget = data[0] + step[0].center;
-						step[0].pulseLenTarget = DEFAULT_SLEEP;
-						sem_post(&step[0].sem);
-						step[1].command = STEPPER_MOVE_TO;
-						step[1].stepTarget = data[1] + step[1].center;
-						step[1].pulseLenTarget = DEFAULT_SLEEP;
-						sem_post(&step[1].sem);
-						sem_wait(&step[0].semRT);
-						sem_wait(&step[1].semRT);
-						free(data);
-						printf("primed execute pump\n");
 			sem_post(&core.semRT);
+					break;
+				case CORE_EXECUTE_QUEUE:
+					sem_post(&core.semRT);
+					if (!queueEmpty(&core.queue)) {
+						printf("priming execute pump\n");
+						coreDequeueExecute();
+					} else {
+						warning("CORE_EXECUTE_QUEUE called but the queue was empty!\n");
 					}
 					break;
 				default:
