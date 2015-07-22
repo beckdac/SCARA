@@ -41,8 +41,7 @@ int task_kinematics_ik(int argc, char *argv[]) {
 	float x, y, L1, L2, S, E;
 
 	if (argc != 5) {
-KINEMATICS_TEST_USAGE:
-		warning("usage: %s %s kinematics ik <X> <Y>\n", argv[0], argv[1]);
+		warning("usage: %s %s kinematics ik <x> <y>\n", argv[0], argv[1]);
 		return EXIT_FAILURE;
 	}
 
@@ -63,6 +62,20 @@ KINEMATICS_TEST_USAGE:
 }
 
 int task_kinematics_line(int argc, char *argv[]) {
+	float x, y, x1, y1, x2, y2, L1, L2, S, E;
+	unsigned int segments;
+	float d2, d, segmentLen;
+
+	if (argc != 8) {
+		warning("usage: %s %s kinematics line <x1> <y1> <x2> <y2> <segments>\n", argv[0], argv[1]);
+		return EXIT_FAILURE;
+	}
+
+	d2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+	d = sqrtf(d2);
+	segmentLen = d / (float)segments;
+	
+	
 	return EXIT_SUCCESS;
 }
 
