@@ -10,10 +10,12 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
+#include "kinematics.h"
 
 const tasks_table_t tasks[] = { \
 	{ "gpio",	&task_gpio }, \
 	{ "core",	&task_core }, \
+	{ "kinematics", &kinematics_test }, \
 	{ NULL,		NULL } /* end */
 };
 

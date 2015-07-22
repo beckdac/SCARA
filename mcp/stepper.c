@@ -77,7 +77,8 @@ void *stepperThread(void *arg) {
 	sCmd command = STEPPER_PWR_DN;
 	unsigned int pulseLen = 0, pulseLenTarget = 0;
 	int stepCurrent = 0, stepTarget = 0;
-	uint8_t homed[2] = { 0, 0 }, limit[2] = { 0, 0 };
+	uint8_t homed[2] = { 0, 0 };
+	unsigned int limit[2] = { 0, 0 }, center = 0;
 	int seqIndex = 0;
 
 	// enable real time priority for this thread
@@ -99,7 +100,7 @@ void *stepperThread(void *arg) {
 	
         while(1) {
                 if (!sem_trywait(&step->sem)) {
-			printf("stepper command = %d\n", step->command);
+			//printf("stepper command = %d\n", step->command);
 			command = step->command;
 			switch (command) {
 				case STEPPER_EXIT:
@@ -116,6 +117,7 @@ void *stepperThread(void *arg) {
 					step->homed[1] = homed[1];
 					step->limit[0] = limit[0];
 					step->limit[1] = limit[1];
+					step->center = center;
 					break;
 				case STEPPER_STOP:
 					stepTarget = stepCurrent;
@@ -124,24 +126,39 @@ void *stepperThread(void *arg) {
 				case STEPPER_PWR_DN:
 					stepperPowerDown(step);
 					break;
+				case STEPPER_CENTER:
+					if (homed[0] && homed[1]) {
+						pulseLenTarget = step->pulseLenTarget;
+						stepTarget = center;
+						command = STEPPER_MOVE_TO;
+					} else {
+						warning("cannot center an unhomed axis!\n");
+					}
+					break;
 				case STEPPER_MOVE_TO:
 					pulseLenTarget = step->pulseLenTarget;
 					if (homed[0] && homed[1]) {
-						if (step->stepTarget >= step->limit[0] && step->stepTarget <= step->limit[1])
+						if (step->stepTarget >= limit[0] && step->stepTarget <= limit[1])
 							stepTarget = step->stepTarget;
 						else {
-							if (step->stepTarget < step->limit[0]) {
-								stepTarget = step->limit[0];
+							if (step->stepTarget < limit[0]) {
+								stepTarget = limit[0];
 								warning("request for position less than homed range (%d)\n", step->stepTarget);
 							} else {
-								stepTarget = step->limit[1];
+								stepTarget = limit[1];
 								warning("request for position larger than homed range (%d)\n", step->stepTarget);
 							}
 						}
 					} else {
 						stepTarget = step->stepTarget;
-						warning("moving on unhomed axis tp %d\n", stepTarget);
+						warning("moving on unhomed axis to %d\n", stepTarget);
 					}
+					break;
+				case STEPPER_UNHOME:
+					homed[0] = 0;
+					homed[1] = 0;
+					limit[0] = 0;
+					limit[1] = 0;
 					break;
 				case STEPPER_HOME_MIN:
 					stepperPowerDown(step);
@@ -156,7 +173,9 @@ void *stepperThread(void *arg) {
 					stepperPowerDown(step);
 					if (homed[0]) {
 						homed[1] = 1;
-						limit[0] = stepCurrent;
+						limit[1] = stepCurrent;
+						center = (limit[1] - limit[0]) / 2;
+						step->center = center;
 						stepTarget = 0;
 						printf("stepper homed max at %d steps (pins %d - %d - %d - %d)\n", stepCurrent, step->pins[0], step->pins[1], step->pins[2], step->pins[3]);
 					} else {

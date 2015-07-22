@@ -40,7 +40,7 @@ void userInterfaceThread(void *arg) {
 
         while(1) {
                 char buf[80];
-                printf("command (q, s, o, h, d, l, m): ");
+                printf("command (q, s, h, d, o, c, l, m): ");
                 fgets(buf,79,stdin);
                 if (buf[0] == 'q') {
 			core.command = CORE_EXIT;
@@ -53,12 +53,12 @@ void userInterfaceThread(void *arg) {
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
 			printf("Laser on pin %d is %s\n", laserGetPin(), (laserGetState() ? "on" : "off"));
-			printf("Stepper 0\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
-				step[0].homed[0], step[0].homed[1], step[0].limit[0], step[0].limit[1],
+			printf("Stepper 0\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tcenter\t%d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
+				step[0].homed[0], step[0].homed[1], step[0].limit[0], step[0].limit[1], step[0].center,
 				step[0].pulseLen, step[0].pulseLenTarget, step[0].stepCurrent, step[0].stepTarget
 			);
-			printf("Stepper 1\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
-				step[1].homed[0], step[1].homed[1], step[1].limit[0], step[1].limit[1],
+			printf("Stepper 1\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tcenter\t%d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
+				step[1].homed[0], step[1].homed[1], step[1].limit[0], step[1].limit[1], step[1].center,
 				step[1].pulseLen, step[1].pulseLenTarget, step[1].stepCurrent, step[1].stepTarget
 			);
 			for (int i = 0; i < LIMIT_SWITCHES; ++i) {
@@ -66,6 +66,10 @@ void userInterfaceThread(void *arg) {
 			}
 		} else if (buf[0] == 'o') {
 			core.command = CORE_HOME;
+			sem_post(&core.sem);
+                        sem_wait(&core.semRT);
+		} else if (buf[0] == 'c') {
+			core.command = CORE_CENTER;
 			sem_post(&core.sem);
                         sem_wait(&core.semRT);
                 } else if (buf[0] == 'h') {

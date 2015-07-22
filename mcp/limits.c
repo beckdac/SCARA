@@ -98,8 +98,19 @@ void *limitsThread(void *arg) {
 			warning("limit switch polling failed!\n");
 		} else if (rv > 0) {
 			printf("limit switch triggered\n");
-			limitsReadAll();
 			core.command = CORE_LIMIT;
+			// can sometimes bounce
+			// limitsReadAll();
+			// instead scan the poll fd array
+			for (i = 0; i < LIMIT_SWITCHES; ++i) {
+				//printf("%d\t0x%x\t0x%x\t0x%x\n", i, pfd[i].revents, POLLIN, pfd[i].revents & POLLIN);
+				if (pfd[i].revents) { // & POLLIN) {
+					limits.limit[i].state = 0;
+				} else {
+					limits.limit[i].state = 1;
+				}
+			}
+			printf("%d\t%d\t%d\t%d\n", limits.limit[0].state, limits.limit[1].state, limits.limit[2].state, limits.limit[3].state);
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
 		}

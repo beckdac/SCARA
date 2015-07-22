@@ -207,7 +207,7 @@ void *coreThread(void *arg) {
 	sem_post(&ui.sem);
 	while (1) {
 		if (!sem_trywait(&core.sem)) {
-			printf("core command = %d\n", core.command);
+			//printf("core command = %d\n", core.command);
 			command = core.command;
 			switch (command) {
 				case CORE_EXIT:
@@ -227,16 +227,28 @@ void *coreThread(void *arg) {
 					break;
 				case CORE_HOME:
 					state = command;
+					// flush any existing homing
+					step[0].command = STEPPER_UNHOME;
+					sem_post(&step[0].sem);
+					step[1].command = STEPPER_UNHOME;
+					sem_post(&step[1].sem);
+
+					sem_wait(&step[0].semRT);
+					sem_wait(&step[1].semRT);
+					// make sure there are no active limit switches
+					limits.command = LIMIT_STATUS;
+					sem_post(&limits.sem);
+					sem_wait(&limits.semRT);
+					if (!limits.limit[0].state || !limits.limit[1].state || !limits.limit[2].state || !limits.limit[3].state) {
+						warning("at least one limit switch is already being depressed, fix this and try again\n");
+						break;
+					} 
+					// proceed
 					step[0].command = STEPPER_MOVE_TO;
 					step[0].stepTarget = -STEPS_PER_REV;
 					step[0].pulseLenTarget = DEFAULT_SLEEP;
 					sem_post(&step[0].sem);
-					//step[1].command = STEPPER_MOVE_TO;
-					//step[1].stepTarget = -STEPS_PER_REV;
-					//step[1].pulseLenTarget = DEFAULT_SLEEP;
-					//sem_post(&step[1].sem);
 					sem_wait(&step[0].semRT);
-					//sem_wait(&step[1].semRT);
 					break;
 				case CORE_LASER:
 					laser = core.laser;
@@ -245,17 +257,35 @@ void *coreThread(void *arg) {
 					else
 						laserOff();
 					break;
+				case CORE_CENTER:
+					if (!homed) {
+						warning("cannot center until homed!\n");
+					} else {
+						coreStatus();
+						step[0].command = STEPPER_CENTER;
+						sem_post(&step[0].sem);
+						step[1].command = STEPPER_CENTER;
+						sem_post(&step[1].sem);
+						sem_wait(&step[0].semRT);
+						sem_wait(&step[1].semRT);
+					}
 				case CORE_LIMIT:
-					{
-					printf("core_limit\n");
-					uint8_t wait_s0 = 0, wait_s1 = 0;
-					corePowerDown();
+					//printf("core_limit\n");
+					//printf("%d\t%d\t%d\t%d\n", limits.limit[0].state, limits.limit[1].state, limits.limit[2].state, limits.limit[3].state);
 					if (!limits.limit[0].state) {
 						printf("arm min limit triggered\n");
 						if (state == CORE_HOME) {
+							step[0].command = STEPPER_PWR_DN;
+							sem_post(&step[0].sem);
+							sem_wait(&step[0].semRT);
 							step[0].command = STEPPER_HOME_MIN;
 							sem_post(&step[0].sem);
-							wait_s0 = 1;
+							sem_wait(&step[0].semRT);
+							step[0].command = STEPPER_MOVE_TO;
+							step[0].stepTarget = STEPS_PER_REV;
+							step[0].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[0].sem);
+							sem_wait(&step[0].semRT);
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
@@ -264,9 +294,25 @@ void *coreThread(void *arg) {
 					if (!limits.limit[1].state) {
 						printf("arm max limit triggered\n");
 						if (state == CORE_HOME) {
+							step[0].command = STEPPER_PWR_DN;
+							sem_post(&step[0].sem);
+							sem_wait(&step[0].semRT);
 							step[0].command = STEPPER_HOME_MAX;
 							sem_post(&step[0].sem);
-							wait_s0 = 1;
+							sem_wait(&step[0].semRT);
+							// back this stepper off the limit
+							step[0].command = STEPPER_MOVE_TO;
+							printf("step[0].center = %d\n", step[0].center);
+							step[0].stepTarget = step[0].center;
+							step[0].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[0].sem);
+							sem_wait(&step[0].semRT);
+							// start homing next stepper
+							step[1].command = STEPPER_MOVE_TO;
+							step[1].stepTarget = -STEPS_PER_REV;
+							step[1].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[1].sem);
+							sem_wait(&step[1].semRT);
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
@@ -275,9 +321,17 @@ void *coreThread(void *arg) {
 					if (!limits.limit[2].state) {
 						printf("forearm min limit triggered\n");
 						if (state == CORE_HOME) {
+							step[1].command = STEPPER_PWR_DN;
+							sem_post(&step[1].sem);
+							sem_wait(&step[1].semRT);
 							step[1].command = STEPPER_HOME_MIN;
 							sem_post(&step[1].sem);
-							wait_s1 = 1;
+							sem_wait(&step[1].semRT);
+							step[1].command = STEPPER_MOVE_TO;
+							step[1].stepTarget = STEPS_PER_REV;
+							step[1].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[1].sem);
+							sem_wait(&step[1].semRT);
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
@@ -286,20 +340,24 @@ void *coreThread(void *arg) {
 					if (!limits.limit[3].state) {
 						printf("forearm min limit triggered\n");
 						if (state == CORE_HOME) {
+							step[1].command = STEPPER_PWR_DN;
+							sem_post(&step[1].sem);
+							sem_wait(&step[1].semRT);
 							step[1].command = STEPPER_HOME_MAX;
 							sem_post(&step[1].sem);
-							wait_s1 = 1;
+							sem_wait(&step[1].semRT);
+							homed = 1;
+							// back this stepper off the limit
+							step[1].command = STEPPER_MOVE_TO;
+							printf("step[1].center = %d\n", step[1].center);
+							step[1].stepTarget = step[1].center;
+							step[1].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[1].sem);
+							sem_wait(&step[1].semRT);
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
-					}
-					if (wait_s0) {
-						sem_wait(&step[0].semRT);
-					}
-					if (wait_s1) {
-						sem_wait(&step[1].semRT);
-					}
 					}
 					break;
 				default:
