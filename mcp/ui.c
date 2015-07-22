@@ -19,6 +19,7 @@
 #include "limits.h"
 #include "core.h"
 #include "ui.h"
+#include "kinematics.h"
 
 extern struct stepper step[2];
 extern struct limits limits;
@@ -40,7 +41,7 @@ void userInterfaceThread(void *arg) {
 
         while(1) {
                 char buf[80];
-                printf("command (q, s, h, d, o, c, l, m): ");
+                printf("command (q, s, h, d, o, c, l, m, i): ");
                 fgets(buf,79,stdin);
                 if (buf[0] == 'q') {
 			core.command = CORE_EXIT;
@@ -48,7 +49,7 @@ void userInterfaceThread(void *arg) {
 			printf("posted core exit\n");
 			// don't wait for ack, just exit
                         pthread_exit(0);
-                } else if (buf[0] == 's'){
+                } else if (buf[0] == 's') {
 			core.command = CORE_STATUS;
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
@@ -100,6 +101,15 @@ void userInterfaceThread(void *arg) {
                                 sem_post(&step[stepno].sem);
                                 sem_wait(&step[stepno].semRT);
                         }
+		} else if (buf[0] == 'i') {
+			float x1, y1, x2, y2, S, E;
+			int segments, stepsS, stepsE;
+                        if (sscanf(buf,"i %f %f %f %f %d", &x1, &y1, &x2, &y2, &segments) == 4) {
+				printf("rendering line from (%.2f, %.2f) to (%.2f, %.2f) in %d segments\n", x1, y1, x2, y2, segments);
+				kinematicsInverse(x1, y1, L1_MM, L2_MM, &S, &E);
+				stepsS = kinematicsRadToStep(S);
+				stepsE = kinematicsRadToStep(E);
+			}
 		} else {
 			warning("unknown keyboard command in userInterfaceThread: %s\n", buf);
 		}

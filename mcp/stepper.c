@@ -231,7 +231,6 @@ void *stepperThread(void *arg) {
 #warning "this probably shouldn't be here"
 				stepperPowerDown(step);
 				core.command = CORE_MOVE_TO_COMPLETE;
-				core.commandStepper = step->index;
 				sem_post(&core.sem);
 				sem_wait(&core.semRT);
 			}

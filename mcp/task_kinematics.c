@@ -45,8 +45,8 @@ int task_kinematics_ik(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	x = atof(argv[2]);
-	y = atof(argv[3]);
+	x = atof(argv[3]);
+	y = atof(argv[4]);
 	L1 = L1_MM;
 	L2 = L1_MM;
 	printf("x = %.2f   y = %.2f   L1 = %.2f   L2 = %.2f\n", x, y, L1, L2);
@@ -62,19 +62,33 @@ int task_kinematics_ik(int argc, char *argv[]) {
 }
 
 int task_kinematics_line(int argc, char *argv[]) {
-	float x, y, x1, y1, x2, y2, L1, L2, S, E;
+	float x = 0, y = 0, x1, y1, x2, y2, S, E;
 	unsigned int segments;
 	float d2, d, segmentLen;
+	int i;
 
 	if (argc != 8) {
 		warning("usage: %s %s kinematics line <x1> <y1> <x2> <y2> <segments>\n", argv[0], argv[1]);
 		return EXIT_FAILURE;
 	}
 
+	x1 = atof(argv[3]);
+	y1 = atof(argv[4]);
+	x2 = atof(argv[5]);
+	y2 = atof(argv[6]);
+	segments = strtoul(argv[7], NULL, 10);
+	printf("# line from %f %f to %f %f in %d segments\n", x1, y1, x2, y2, segments);
+
 	d2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
 	d = sqrtf(d2);
 	segmentLen = d / (float)segments;
-	
+
+	for (i = 0; i <= segments; ++i) {
+		x = x1 + (((float)i * segmentLen) / d) * (x2 - x1);
+		y = y1 + (((float)i * segmentLen) / d) * (y2 - y1);
+		kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
+		printf("%d\t%d\n", kinematicsRadToStep(S), kinematicsRadToStep(E));
+	}
 	
 	return EXIT_SUCCESS;
 }

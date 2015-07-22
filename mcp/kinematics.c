@@ -56,8 +56,6 @@ int kinematicsTest(int argc, char *argv[]) {
 	float x, y, L1, L2, S, E;
 
 	if (argc != 4) {
-		int i;
-KINEMATICS_TEST_USAGE:
 		warning("usage: %s %s kinematics <X> <Y>\n", argv[0], argv[1]);
 		return EXIT_FAILURE;
 	}
