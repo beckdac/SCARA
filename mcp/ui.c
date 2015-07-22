@@ -17,6 +17,7 @@
 #include "util.h"
 #include "laser.h"
 #include "limits.h"
+#include "queue.h"
 #include "core.h"
 #include "ui.h"
 #include "kinematics.h"
@@ -105,10 +106,14 @@ void userInterfaceThread(void *arg) {
 			float x1, y1, x2, y2, S, E;
 			int segments, stepsS, stepsE;
                         if (sscanf(buf,"i %f %f %f %f %d", &x1, &y1, &x2, &y2, &segments) == 4) {
+				int *d = (int *)malloc(sizeof(int) * 2);
 				printf("rendering line from (%.2f, %.2f) to (%.2f, %.2f) in %d segments\n", x1, y1, x2, y2, segments);
 				kinematicsInverse(x1, y1, L1_MM, L2_MM, &S, &E);
 				stepsS = kinematicsRadToStep(S);
 				stepsE = kinematicsRadToStep(E);
+				d[0] = stepsS;
+				d[1] = stepsE;
+				queueEnqueue(&core.queue, (void *)d);
 			}
 		} else {
 			warning("unknown keyboard command in userInterfaceThread: %s\n", buf);

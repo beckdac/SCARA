@@ -14,6 +14,7 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
+#include "queue.h"
 #include "stepper.h"
 #include "ui.h"
 #include "util.h"

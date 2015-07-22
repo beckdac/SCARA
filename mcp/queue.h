@@ -7,6 +7,14 @@ typedef struct queue {
 	int first;
 	int last;
 	int count;
+
+	pthread_mutex_t mutex;
 } queue;
+
+void queueInit(queue *q, unsigned int size);
+void queueEnqueue(queue *q, void *x);
+void *queueDequeue(queue *q);
+int queueEmpty(queue *q);
+void queuePrint(queue *q);
 
 #endif /* __QUEUE_H__ */

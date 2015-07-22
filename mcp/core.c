@@ -12,6 +12,7 @@
 #include "file.h"
 #include "gpio.h"
 #include "task.h"
+#include "queue.h"
 #include "stepper.h"
 #include "ui.h"
 #include "util.h"
@@ -81,11 +82,16 @@ static void coreInitUserInterface(void) {
 	userInterfaceInit();
 }
 
+static void coreInitQueue(void) {
+	queueInit(&core.queue, CORE_DEFAULT_QUEUE_LENGTH);
+}
+
 static void coreInit(void) {
 	memset(&core, 0, sizeof(struct core));
 	coreInitMemory();
 	coreInitGPIO();
 	coreInitLaser();
+	coreInitQueue();
 	coreInitLimits();
 	coreInitSteppers();
 	coreInitUserInterface();
