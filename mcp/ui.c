@@ -42,7 +42,7 @@ void userInterfaceThread(void *arg) {
 
         while(1) {
                 char buf[80];
-                printf("command (q, s, h, d, o, c, l, m, i, e, p): ");
+                printf("command (q, s, h, d, o, c, l, a, m, i, e, p): ");
                 fgets(buf,79,stdin);
                 if (buf[0] == 'q') {
 			core.command = CORE_EXIT;
@@ -91,11 +91,11 @@ void userInterfaceThread(void *arg) {
 				core.laser = 1;
 			sem_post(&core.sem);
                         sem_wait(&core.semRT);
-                } else if (buf[0] == 'm') {
+                } else if (buf[0] == 'a') {
 			unsigned stepno;
                         int stepTarget;
                         unsigned int pulseLenTarget;
-                        if (sscanf(buf,"m %d %d %d", &stepno, &stepTarget, &pulseLenTarget) == 3) {
+                        if (sscanf(buf,"a %d %d %d", &stepno, &stepTarget, &pulseLenTarget) == 3) {
 				printf("MOVE_TO given to stepper %d w/ target step %d and pulse len of %d\n", stepno, stepTarget, pulseLenTarget);
                         	step[stepno].command = STEPPER_MOVE_TO;
 				step[stepno].pulseLenTarget = pulseLenTarget;
@@ -103,6 +103,23 @@ void userInterfaceThread(void *arg) {
                                 sem_post(&step[stepno].sem);
                                 sem_wait(&step[stepno].semRT);
                         }
+                } else if (buf[0] == 'm') {
+			float x, y, S, E;
+                        if (sscanf(buf,"m %f %f", &x, &y) == 2) {
+				printf("moving to (%.2f, %.2f)\n", x, y);
+				kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
+				step[0].command = STEPPER_MOVE_TO;
+				step[0].pulseLenTarget = DEFAULT_SLEEP;
+				step[0].stepTarget = S + step[0].center;
+                                sem_post(&step[0].sem);
+                                sem_wait(&step[0].semRT);
+				step[1].command = STEPPER_MOVE_TO;
+				step[1].pulseLenTarget = DEFAULT_SLEEP;
+				step[1].stepTarget = E + step[1].center;
+                                sem_post(&step[1].sem);
+                                sem_wait(&step[1].semRT);
+			}
+			
 		} else if (buf[0] == 'i') {
 			float x, y, x1, y1, x2, y2, S, E, d, d2, segmentLen;
 printf("%s\n", buf);

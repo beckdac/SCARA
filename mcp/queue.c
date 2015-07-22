@@ -30,7 +30,7 @@ void queueEnqueue(queue *q, void *x) {
 	pthread_mutex_lock(&q->mutex);
 
 	if (q->count >= q->size) {
-		warning("queue overflow in enqueue 0x%x\n",x);
+		fatal_error("queue overflow in enqueue 0x%x\n",x);
 	} else {
 		q->last = (q->last+1) % q->size;
 		q->q[ q->last ] = x;    
@@ -46,7 +46,7 @@ void *queueDequeue(queue *q) {
 	pthread_mutex_lock(&q->mutex);
 
 	if (q->count <= 0) {
-		warning("queue is empty for dequeue\n");
+		fatal_error("queue is empty for dequeue\n");
 	} else {
 		x = q->q[q->first];
 		q->first = (q->first+1) % q->size;
