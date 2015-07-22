@@ -18,4 +18,10 @@ int task_gpio_test_poll(int argc, char *argv[]);
 int task_core(int argc, char *argv[]);
 int task_core_run(int argc, char *argv[]);
 
+// task_kinematics.c
+int task_kinematics(int argc, char *argv[]);
+int task_kinematics_ik(int argc, char *argv[]);
+int task_kinematics_line(int argc, char *argv[]);
+int task_kinematics_arc(int argc, char *argv[]);
+
 #endif

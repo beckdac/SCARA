@@ -10,7 +10,6 @@ struct core {
 	sem_t	semRT;
 
 	coreCmd command;
-	uint8_t commandStepper;	/* to identify commands from a specific stepper */
 
 	uint8_t homed;
 	uint8_t laser;

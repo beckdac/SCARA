@@ -9,6 +9,11 @@
 
 int kinematicsForward(float *x, float *y, float L1, float L2, float S, float E);
 int kinematicsInverse(float x, float y, float L1, float L2, float *S, float *E);
-int kinematicsTest(int argc, char *argv[]);
+int kinematicsInverseSmallestDelta(float x, float y, float L1, float L2, float *S, float *E, float currentS, float currentE);
+
+float kinematicsStepToRad(int steps);
+int kinematicsRadToStep(float rad);
+float kinematicsRadToDeg(float rad);
+float kinematicsDegToRad(float deg);
 
 #endif /* __KINEMATICS_H__ */

@@ -177,7 +177,7 @@ void *coreThread(void *arg) {
 	// local variables
 	coreCmd command = CORE_PWR_DN, state = CORE_PWR_DN;
 	uint8_t homed = 0, laser = 0;
-	uint8_t movesInProgress = 0, moveInProgress[STEPPER_COUNT] = { 0 };
+	int i;
 
 	printf("coreThread started...\n");
 
@@ -217,6 +217,8 @@ void *coreThread(void *arg) {
 					break;
 				case CORE_STATUS:
 					coreStatus();
+					core.homed = homed;
+					core.laser = laser;
 					break;
 				case CORE_PWR_DN:
 					state = command;
@@ -230,14 +232,13 @@ void *coreThread(void *arg) {
 					if (state == CORE_HOME) {
 						// noop
 					} else {
-						if (movesInProgress && moveInProgress[core.commandStepper]) {
-							moveInProgress[core.commandStepper] = 0;
-							movesInProgress--;
-							if (!movesInProgress) {
-								/* send next move */
-							}
-						} else {
-							warning("MOVE_TO_COMPLETE received but there is no known move in progress\n");
+						// if any other stepper motions are pending don't issue a new command */
+						for (i = 0; i < STEPPER_COUNT; ++i)
+							if (step[i].command == STEPPER_MOVE_TO)
+								break;
+						// if all steppers are done, then issue the next command, if any */
+						if (i == STEPPER_COUNT) {
+							/* send next move */
 						}
 					}
 					break;

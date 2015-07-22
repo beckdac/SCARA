@@ -15,7 +15,7 @@
 const tasks_table_t tasks[] = { \
 	{ "gpio",	&task_gpio }, \
 	{ "core",	&task_core }, \
-	{ "kinematics", &kinematicsTest }, \
+	{ "kinematics", &task_kinematics }, \
 	{ NULL,		NULL } /* end */
 };
 
@@ -27,6 +27,13 @@ const tasks_table_t tasks_gpio[] = { \
 
 const tasks_table_t tasks_core[] = { \
 	{ "run",	&task_core_run }, \
+	{ NULL,		NULL } /* end */
+};
+
+const tasks_table_t tasks_kinematics[] = { \
+	{ "ik",		*task_kinematics_ik }, \
+	{ "line",	*task_kinematics_line }, \
+	{ "arc",	*task_kinematics_arc }, \
 	{ NULL,		NULL } /* end */
 };
 
