@@ -1,6 +1,8 @@
 #ifndef __STEPPER_H__
 #define __STEPPER_H__
 
+#define STEPPER_COUNT 2
+
 // 28BYJ-48
 #define STEPS_PER_REV 64. * (25792./405.)
 
@@ -12,6 +14,7 @@ struct stepper {
         sem_t sem;
         sem_t semRT;
 
+	uint8_t index;
 	uint8_t pins[4];
 
 	sCmd command;
@@ -26,7 +29,7 @@ struct stepper {
 	unsigned int center;	
 };
 
-void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4);
+void stepperInit(uint8_t index, int pin1, int pin2, int pin3, int pin4);
 void *stepperThread(void *arg);
 
 	// pin  state

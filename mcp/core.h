@@ -1,7 +1,7 @@
 #ifndef __CORE_H__
 #define __CORE_H__
 
-typedef enum coreCommand { CORE_EXIT, CORE_STATUS, CORE_STOP, CORE_PWR_DN, CORE_LIMIT, CORE_HOME, CORE_CENTER, CORE_LASER } coreCmd;
+typedef enum coreCommand { CORE_EXIT, CORE_STATUS, CORE_STOP, CORE_PWR_DN, CORE_LIMIT, CORE_HOME, CORE_CENTER, CORE_LASER, CORE_MOVE_TO_COMPLETE } coreCmd;
 
 void coreRun(void);
 
@@ -10,6 +10,7 @@ struct core {
 	sem_t	semRT;
 
 	coreCmd command;
+	uint8_t commandStepper;	/* to identify commands from a specific stepper */
 
 	uint8_t homed;
 	uint8_t laser;

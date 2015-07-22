@@ -26,7 +26,7 @@
 #define ENABLE_STEPPERS
 
 #ifdef ENABLE_STEPPERS
-extern struct stepper step[2];
+extern struct stepper step[STEPPER_COUNT];
 #endif
 
 #undef ENABLE_LIMITS
@@ -71,8 +71,8 @@ static void coreInitLimits(void) {
 static void coreInitSteppers(void) {
 #ifdef ENABLE_STEPPERS
 	//printf("initializing steppers\n");
-	stepperInit(&step[0],  4, 17, 18, 27);
-	stepperInit(&step[1], 22, 23, 24, 25);
+	stepperInit(0,  4, 17, 18, 27);
+	stepperInit(1, 22, 23, 24, 25);
 	//printf("done\n");
 #endif
 }
@@ -177,6 +177,7 @@ void *coreThread(void *arg) {
 	// local variables
 	coreCmd command = CORE_PWR_DN, state = CORE_PWR_DN;
 	uint8_t homed = 0, laser = 0;
+	uint8_t movesInProgress = 0, moveInProgress[STEPPER_COUNT] = { 0 };
 
 	printf("coreThread started...\n");
 
@@ -224,6 +225,21 @@ void *coreThread(void *arg) {
 				case CORE_STOP:
 					state = command;
 					coreStop();
+					break;
+				case CORE_MOVE_TO_COMPLETE:
+					if (state == CORE_HOME) {
+						// noop
+					} else {
+						if (movesInProgress && moveInProgress[core.commandStepper]) {
+							moveInProgress[core.commandStepper] = 0;
+							movesInProgress--;
+							if (!movesInProgress) {
+								/* send next move */
+							}
+						} else {
+							warning("MOVE_TO_COMPLETE received but there is no known move in progress\n");
+						}
+					}
 					break;
 				case CORE_HOME:
 					state = command;
@@ -375,7 +391,7 @@ void *coreThread(void *arg) {
 /////////////
 
 void coreRun(void) {
-	pthread_t stepperThreads[2];
+	pthread_t stepperThreads[STEPPER_COUNT];
 	pthread_t uiThread, limThread;
 	pthread_t coreExecThread;
 
@@ -384,8 +400,9 @@ void coreRun(void) {
 	// spawn threads
 	pthread_create(&uiThread, NULL, (void *)(userInterfaceThread), NULL);
 #ifdef ENABLE_STEPPERS
-	pthread_create(&stepperThreads[0], NULL, (void *)(stepperThread), (void *)&step[0]);
-	pthread_create(&stepperThreads[1], NULL, (void *)(stepperThread), (void *)&step[1]);
+	for (int i = 0; i < STEPPER_COUNT; ++i) {
+		pthread_create(&stepperThreads[i], NULL, (void *)(stepperThread), (void *)&step[i]);
+	}
 #endif
 #ifdef ENABLE_LIMITS
 	pthread_create(&limThread, NULL, (void *)(limitsThread), NULL);
@@ -396,10 +413,10 @@ void coreRun(void) {
 	pthread_join(uiThread, NULL);
 	printf("collected user interface thread\n");
 #ifdef ENABLE_STEPPERS
-	pthread_join(stepperThreads[0], NULL);
-	printf("collected stepper 0 thread\n");
-	pthread_join(stepperThreads[1], NULL);
-	printf("collected stepper 1 thread\n");
+	for (int i = 0; i < STEPPER_COUNT; ++i) {
+		pthread_join(stepperThreads[i], NULL);
+		printf("collected stepper %d thread\n", i);
+	}
 #endif
 #ifdef ENABLE_LIMITS
 	pthread_join(limThread, NULL);

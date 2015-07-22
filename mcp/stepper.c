@@ -14,8 +14,9 @@
 #include "stepper.h"
 #include "ui.h"
 #include "util.h"
+#include "core.h"
 
-struct stepper step[2];
+struct stepper step[STEPPER_COUNT];
 extern struct core core;
 
 uint8_t stepSequence[STEPPER_SEQUENCE_N][4] = STEPPER_SEQUENCE;
@@ -23,13 +24,17 @@ uint8_t stepSequence[STEPPER_SEQUENCE_N][4] = STEPPER_SEQUENCE;
 #define SPEED_RAMP
 #undef SPEED_RAMP
 
-void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4) {
+void stepperInit(uint8_t index, int pin1, int pin2, int pin3, int pin4) {
+	if (index >= STEPPER_COUNT) {
+		fatal_error("stepper index (%d) is out of range\n", index);
+	}
+	struct stepper *s = &step[index];
 	//printf("stepperInit @ 0x%x\n", step);
 
-	step->pins[0] = pin1;
-	step->pins[1] = pin2;
-	step->pins[2] = pin3;
-	step->pins[3] = pin4;
+	s->pins[0] = pin1;
+	s->pins[1] = pin2;
+	s->pins[2] = pin3;
+	s->pins[3] = pin4;
 
         gpio_export(pin1);
         gpio_direction(pin1, GPIO_DIR_OUT);
@@ -41,18 +46,20 @@ void stepperInit(struct stepper *step, int pin1, int pin2, int pin3, int pin4) {
         gpio_direction(pin4, GPIO_DIR_OUT);
 
 	//printf("initializing semaphore for stepper on pins %d - %d - %d - %d\n", pin1, pin2, pin3, pin4);
-        sem_init(&step->sem, 0, 0);
-        sem_init(&step->semRT, 0, 0);
+        sem_init(&s->sem, 0, 0);
+        sem_init(&s->semRT, 0, 0);
 
-	step->pulseLen = 0;
-	step->pulseLenTarget = 0;
-	step->stepCurrent = 0;
-	step->stepTarget = 0;
+	s->index = index;
 
-	step->homed[0] = 0;
-	step->homed[1] = 0;
-	step->limit[0] = 0;
-	step->limit[1] = 0;
+	s->pulseLen = 0;
+	s->pulseLenTarget = 0;
+	s->stepCurrent = 0;
+	s->stepTarget = 0;
+
+	s->homed[0] = 0;
+	s->homed[1] = 0;
+	s->limit[0] = 0;
+	s->limit[1] = 0;
 }
 
 static void stepperCleanup(struct stepper *step) {
@@ -223,6 +230,10 @@ void *stepperThread(void *arg) {
 				command = STEPPER_STOP;
 #warning "this probably shouldn't be here"
 				stepperPowerDown(step);
+				core.command = CORE_MOVE_TO_COMPLETE;
+				core.commandStepper = step->index;
+				sem_post(&core.sem);
+				sem_wait(&core.semRT);
 			}
 			if (command == STEPPER_MOVE_TO) {
 				for (int i = 0; i < 4; ++i) {
