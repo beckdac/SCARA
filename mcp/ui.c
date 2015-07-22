@@ -42,7 +42,7 @@ void userInterfaceThread(void *arg) {
 
         while(1) {
                 char buf[80];
-                printf("command (q, s, h, d, o, c, l, m, i): ");
+                printf("command (q, s, h, d, o, c, l, m, i, e, p): ");
                 fgets(buf,79,stdin);
                 if (buf[0] == 'q') {
 			core.command = CORE_EXIT;
@@ -54,6 +54,7 @@ void userInterfaceThread(void *arg) {
 			core.command = CORE_STATUS;
 			sem_post(&core.sem);
 			sem_wait(&core.semRT);
+			printf("Positioning queue has %d entries\n", queueCount(&core.queue));
 			printf("Laser on pin %d is %s\n", laserGetPin(), (laserGetState() ? "on" : "off"));
 			printf("Stepper 0\n\thomed\tmin %d\tmax %d\n\tlimit\tmin %d\tmax %d\n\tcenter\t%d\n\tpulseLen\t%d\n\tpulseLenTarget\t%d\n\tstepCurrent\t%d\n\tstepTarget\t%d\n",
 				step[0].homed[0], step[0].homed[1], step[0].limit[0], step[0].limit[1], step[0].center,
@@ -103,18 +104,50 @@ void userInterfaceThread(void *arg) {
                                 sem_wait(&step[stepno].semRT);
                         }
 		} else if (buf[0] == 'i') {
-			float x1, y1, x2, y2, S, E;
-			int segments, stepsS, stepsE;
-                        if (sscanf(buf,"i %f %f %f %f %d", &x1, &y1, &x2, &y2, &segments) == 4) {
-				int *d = (int *)malloc(sizeof(int) * 2);
+			float x, y, x1, y1, x2, y2, S, E, d, d2, segmentLen;
+printf("%s\n", buf);
+			int segments, i;
+                        if (sscanf(buf,"i %f %f %f %f %d", &x1, &y1, &x2, &y2, &segments) == 5) {
 				printf("rendering line from (%.2f, %.2f) to (%.2f, %.2f) in %d segments\n", x1, y1, x2, y2, segments);
-				kinematicsInverse(x1, y1, L1_MM, L2_MM, &S, &E);
-				stepsS = kinematicsRadToStep(S);
-				stepsE = kinematicsRadToStep(E);
-				d[0] = stepsS;
-				d[1] = stepsE;
-				queueEnqueue(&core.queue, (void *)d);
+
+				d2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+				d = sqrtf(d2);
+				segmentLen = d / (float)segments;
+
+				for (i = 0; i <= segments; ++i) {
+					int *data = (int *)malloc(sizeof(int) * 2);
+					x = x1 + (((float)i * segmentLen) / d) * (x2 - x1);
+					y = y1 + (((float)i * segmentLen) / d) * (y2 - y1);
+					kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
+					data[0] = kinematicsRadToStep(S);
+					data[1] = kinematicsRadToStep(E);
+					queueEnqueue(&core.queue, (void *)data);
+				}
+
+				printf("queue is now %d entries\n", queueCount(&core.queue));
 			}
+		} else if (buf[0] == 'e') {
+			printf("queue is %d entries\n", queueCount(&core.queue));
+			printf("dispatching core thread to execute queue\n");
+			core.command = CORE_EXECUTE_QUEUE;
+			sem_post(&core.sem);
+			sem_wait(&core.semRT);
+		} else if (buf[0] == 'p') {
+			int i;
+			int *data;
+			struct queue *q = &core.queue;
+
+			pthread_mutex_lock(&q->mutex);
+			i=q->first;
+			while (i != q->last) {
+				data = (int *)q->q[i];
+				printf("%d\t%d\n", data[0], data[1]);
+				i = (i+1) % q->size;
+			}
+			data = (int *)q->q[i];
+			printf("%d\t%d\n", data[0], data[1]);
+			printf("\n");
+			pthread_mutex_unlock(&q->mutex);
 		} else {
 			warning("unknown keyboard command in userInterfaceThread: %s\n", buf);
 		}

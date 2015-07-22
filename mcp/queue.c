@@ -18,6 +18,14 @@ void queueInit(queue *q, unsigned int size) {
 	}
 }
 
+int queueCount(queue *q) {
+	int count;
+	pthread_mutex_lock(&q->mutex);
+	count = q->count;
+	pthread_mutex_unlock(&q->mutex);
+	return count;
+}
+
 void queueEnqueue(queue *q, void *x) {
 	pthread_mutex_lock(&q->mutex);
 
@@ -51,10 +59,16 @@ void *queueDequeue(queue *q) {
 }
 
 int queueEmpty(queue *q) {
+	int isEmpty;
+
+	pthread_mutex_lock(&q->mutex);
 	if (q->count <= 0)
-		return 1;
+		isEmpty=1;
 	else
-		return 0;
+		isEmpty=0;
+	pthread_mutex_unlock(&q->mutex);
+
+	return isEmpty;
 }
 
 void queuePrint(queue *q) {

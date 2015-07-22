@@ -225,16 +225,22 @@ void *coreThread(void *arg) {
 					coreStatus();
 					core.homed = homed;
 					core.laser = laser;
+			sem_post(&core.semRT);
 					break;
 				case CORE_PWR_DN:
 					state = command;
 					corePowerDown();
+			sem_post(&core.semRT);
 					break;
 				case CORE_STOP:
 					state = command;
 					coreStop();
+			sem_post(&core.semRT);
 					break;
 				case CORE_MOVE_TO_COMPLETE:
+			sem_post(&core.semRT);
+printf("move to complete\n");
+printf("state = %d\n", state);
 					if (state == CORE_HOME) {
 						// noop
 					} else {
@@ -242,9 +248,22 @@ void *coreThread(void *arg) {
 						for (i = 0; i < STEPPER_COUNT; ++i)
 							if (step[i].command == STEPPER_MOVE_TO)
 								break;
+printf("i = %d\n", i);
 						// if all steppers are done, then issue the next command, if any */
-						if (i == STEPPER_COUNT) {
-							/* send next move */
+						if (i == STEPPER_COUNT && queueCount(&core.queue) > 0) {
+printf("dequeuening and posting\n");
+							int *data = (int *)queueDequeue(&core.queue);
+							step[0].command = STEPPER_MOVE_TO;
+							step[0].stepTarget = data[0] + step[0].center;
+							step[0].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[0].sem);
+							step[1].command = STEPPER_MOVE_TO;
+							step[1].stepTarget = data[1] + step[1].center;
+							step[1].pulseLenTarget = DEFAULT_SLEEP;
+							sem_post(&step[1].sem);
+							sem_wait(&step[0].semRT);
+							sem_wait(&step[1].semRT);
+							free(data);
 						}
 					}
 					break;
@@ -272,6 +291,7 @@ void *coreThread(void *arg) {
 					step[0].pulseLenTarget = DEFAULT_SLEEP;
 					sem_post(&step[0].sem);
 					sem_wait(&step[0].semRT);
+			sem_post(&core.semRT);
 					break;
 				case CORE_LASER:
 					laser = core.laser;
@@ -279,6 +299,7 @@ void *coreThread(void *arg) {
 						laserOn();
 					else
 						laserOff();
+			sem_post(&core.semRT);
 					break;
 				case CORE_CENTER:
 					if (!homed) {
@@ -292,6 +313,8 @@ void *coreThread(void *arg) {
 						sem_wait(&step[0].semRT);
 						sem_wait(&step[1].semRT);
 					}
+			sem_post(&core.semRT);
+					break;
 				case CORE_LIMIT:
 					//printf("core_limit\n");
 					//printf("%d\t%d\t%d\t%d\n", limits.limit[0].state, limits.limit[1].state, limits.limit[2].state, limits.limit[3].state);
@@ -313,6 +336,7 @@ void *coreThread(void *arg) {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
+			sem_post(&core.semRT);
 					}
 					if (!limits.limit[1].state) {
 						printf("arm max limit triggered\n");
@@ -340,6 +364,7 @@ void *coreThread(void *arg) {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
+			sem_post(&core.semRT);
 					}
 					if (!limits.limit[2].state) {
 						printf("forearm min limit triggered\n");
@@ -359,9 +384,10 @@ void *coreThread(void *arg) {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
+			sem_post(&core.semRT);
 					}
 					if (!limits.limit[3].state) {
-						printf("forearm min limit triggered\n");
+						printf("forearm max limit triggered\n");
 						if (state == CORE_HOME) {
 							step[1].command = STEPPER_PWR_DN;
 							sem_post(&step[1].sem);
@@ -377,17 +403,39 @@ void *coreThread(void *arg) {
 							step[1].pulseLenTarget = DEFAULT_SLEEP;
 							sem_post(&step[1].sem);
 							sem_wait(&step[1].semRT);
+							printf("arm is homed!\n");
+#warning is this the correct state?
+							state = CORE_PWR_DN;
 						} else {
 							state = command = CORE_PWR_DN;
 							corePowerDown();
 						}
+			sem_post(&core.semRT);
+					}
+					break;
+				case CORE_EXECUTE_QUEUE: {
+						int *data = (int *)queueDequeue(&core.queue);
+						step[0].command = STEPPER_MOVE_TO;
+						step[0].stepTarget = data[0] + step[0].center;
+						step[0].pulseLenTarget = DEFAULT_SLEEP;
+						sem_post(&step[0].sem);
+						step[1].command = STEPPER_MOVE_TO;
+						step[1].stepTarget = data[1] + step[1].center;
+						step[1].pulseLenTarget = DEFAULT_SLEEP;
+						sem_post(&step[1].sem);
+						sem_wait(&step[0].semRT);
+						sem_wait(&step[1].semRT);
+						free(data);
+						printf("primed execute pump\n");
+			sem_post(&core.semRT);
 					}
 					break;
 				default:
 					break;
 			};
 			// ack
-			sem_post(&core.semRT);
+			// moved into calls
+			//sem_post(&core.semRT);
 		}
 		sleep_until(&ts, DEFAULT_SLEEP);
 	}

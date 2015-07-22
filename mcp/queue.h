@@ -15,6 +15,7 @@ void queueInit(queue *q, unsigned int size);
 void queueEnqueue(queue *q, void *x);
 void *queueDequeue(queue *q);
 int queueEmpty(queue *q);
+int queueCount(queue *q);
 void queuePrint(queue *q);
 
 #endif /* __QUEUE_H__ */
