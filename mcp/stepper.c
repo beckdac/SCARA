@@ -107,6 +107,10 @@ void *stepperThread(void *arg) {
 	sem_post(&step->semRT);
 	
         while(1) {
+		int sc;
+		sem_getvalue(&step->sem, &sc);
+		if (sc)
+			printf("sc=%d\n", sc);
                 if (!sem_trywait(&step->sem)) {
 			//printf("stepper command = %d\n", step->command);
 			command = step->command;
@@ -126,13 +130,17 @@ void *stepperThread(void *arg) {
 					step->limit[0] = limit[0];
 					step->limit[1] = limit[1];
 					step->center = center;
+					// ack
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_STOP:
 					stepTarget = stepCurrent;
 					pulseLen = 0;
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_PWR_DN:
 					stepperPowerDown(step);
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_CENTER:
 					if (homed[0] && homed[1]) {
@@ -143,6 +151,7 @@ void *stepperThread(void *arg) {
 					} else {
 						warning("cannot center an unhomed axis!\n");
 					}
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_MOVE_TO:
 					pulseLenTarget = step->pulseLenTarget;
@@ -164,12 +173,14 @@ void *stepperThread(void *arg) {
 						warning("moving on unhomed axis to %d\n", stepTarget);
 					}
 					coreIncrementMovesInProgress(step->index);
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_UNHOME:
 					homed[0] = 0;
 					homed[1] = 0;
 					limit[0] = 0;
 					limit[1] = 0;
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_HOME_MIN:
 					stepperPowerDown(step);
@@ -180,6 +191,7 @@ void *stepperThread(void *arg) {
 					stepTarget = 0;
 					command = STEPPER_PWR_DN;
 					printf("stepper homed min (pins %d - %d - %d - %d)\n", step->pins[0], step->pins[1], step->pins[2], step->pins[3]);
+                        		sem_post(&step->semRT);
 					break;
 				case STEPPER_HOME_MAX:
 					stepperPowerDown(step);
@@ -195,14 +207,12 @@ void *stepperThread(void *arg) {
 						warning("cannot home max before homing min!\n");
 					}
 					command = STEPPER_PWR_DN;
+                        		sem_post(&step->semRT);
 					break;
 				default:
 					fatal_error("unexpected command for stepper thread\n");
 					break;
 			};
-
-			// ack
-                        sem_post(&step->semRT);
 		}
 		if (command == STEPPER_MOVE_TO) {
 #ifdef SPEED_RAMP
@@ -237,12 +247,10 @@ void *stepperThread(void *arg) {
 #warning "this only works because core is the only thread updating this?"
 				command = STEPPER_PWR_DN;
 				stepperPowerDown(step);
-//
 				coreDecrementMovesInProgress(step->index);
-
 				core.command = CORE_MOVE_TO_COMPLETE;
 				sem_post(&core.sem);
-				//sem_wait(&core.semRT);
+				sem_wait(&core.semRT);
 			}
 			if (command == STEPPER_MOVE_TO) {
 				for (int i = 0; i < 4; ++i) {

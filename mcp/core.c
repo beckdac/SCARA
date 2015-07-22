@@ -204,11 +204,8 @@ static void coreDequeueExecute(void) {
 	step[1].stepTarget = step[1].center - data[1];
 	step[1].pulseLenTarget = DEFAULT_SLEEP;
 	sem_post(&step[1].sem);
-	printf("about to wait\n");
 	sem_wait(&step[0].semRT);
-	printf("waited now about to wait\n");
 	sem_wait(&step[1].semRT);
-	printf("waited done\n");
 	free(data);
 }
 
@@ -270,20 +267,20 @@ void *coreThread(void *arg) {
 					coreStatus();
 					core.homed = homed;
 					core.laser = laser;
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_PWR_DN:
 					state = command;
 					corePowerDown();
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_STOP:
 					state = command;
 					coreStop();
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_MOVE_TO_COMPLETE:
-					//sem_post(&core.semRT);
+					sem_post(&core.semRT);
 //printf(">> movesInProgress = %d\n", movesInProgress());
 					if (state == CORE_HOME) {
 						// noop
@@ -321,7 +318,7 @@ void *coreThread(void *arg) {
 					step[0].pulseLenTarget = DEFAULT_SLEEP;
 					sem_post(&step[0].sem);
 					sem_wait(&step[0].semRT);
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_LASER:
 					laser = core.laser;
@@ -329,7 +326,7 @@ void *coreThread(void *arg) {
 						laserOn();
 					else
 						laserOff();
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_CENTER:
 					if (!homed) {
@@ -343,7 +340,7 @@ void *coreThread(void *arg) {
 						sem_wait(&step[0].semRT);
 						sem_wait(&step[1].semRT);
 					}
-			sem_post(&core.semRT);
+					sem_post(&core.semRT);
 					break;
 				case CORE_LIMIT:
 					//printf("core_limit\n");

@@ -102,6 +102,7 @@ void userInterfaceThread(void *arg) {
 				int *data = queueDequeue(&core.queue);
 				free(data);
 			}
+			printf("flushed queues and moves\n");
                 } else if (buf[0] == 'a') {
 			unsigned stepno;
                         int stepTarget;
@@ -119,7 +120,6 @@ void userInterfaceThread(void *arg) {
                         if (sscanf(buf,"m %f %f", &x, &y) == 2) {
 				kinematicsInverse(x, y, L1_MM, L2_MM, &S, &E);
 				printf("moving to (%.2f, %.2f) - %d  %d - %.4f  %.4f - %.4f  %.4f - %d  %d\n", x, y, kinematicsRadToStep(S), kinematicsRadToStep(E), S, E, kinematicsRadToDeg(S), kinematicsRadToDeg(E), kinematicsRadToStep(S) + step[0].center, step[1].center - kinematicsRadToStep(E));
-#if 1
 				step[0].command = STEPPER_MOVE_TO;
 				step[0].pulseLenTarget = DEFAULT_SLEEP;
 				step[0].stepTarget = kinematicsRadToStep(S) + step[0].center;
@@ -130,7 +130,6 @@ void userInterfaceThread(void *arg) {
 				step[1].stepTarget = step[1].center - kinematicsRadToStep(E);
                                 sem_post(&step[1].sem);
                                 sem_wait(&step[1].semRT);
-#endif
 			}
 			
 		} else if (buf[0] == 'i') {
