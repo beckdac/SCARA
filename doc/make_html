@@ -1,0 +1,14 @@
+#!/bin/bash
+
+files=`\ls *.jpg`
+
+printf "<HTML><HEAD><TITLE>assembly photos</TITLE></HEAD><BODY><TABLE><TR><TH>Step</TH><TH>Thumbnail</TH><TH>Link to view sized image</TH></TR>\n"
+
+i=1
+for file in $files
+do
+	printf "<TR><TD>%d</TD><TD><IMG SRC='%s' HEIGHT='200'/></TD><TD><A HREF='%s'>View full sized image</TD></TR>\n" $i $file $file
+	i=$(($i + 1))
+done
+
+printf "</TABLE></BODY></HTML>\n"
